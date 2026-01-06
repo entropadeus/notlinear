@@ -40,7 +40,7 @@ interface ProjectContentProps {
 const statusConfig = [
   { key: "backlog", label: "Backlog", icon: Archive, color: "text-slate-400", gradient: "from-slate-500/20 to-slate-600/10" },
   { key: "todo", label: "Todo", icon: Circle, color: "text-blue-400", gradient: "from-blue-500/20 to-blue-600/10" },
-  { key: "inProgress", label: "In Progress", icon: Loader2, color: "text-amber-400", gradient: "from-amber-500/20 to-amber-600/10" },
+  { key: "inProgress", label: "In Progress", icon: Loader2, color: "text-orange-400", gradient: "from-orange-500/20 to-orange-600/10" },
   { key: "inReview", label: "In Review", icon: Clock, color: "text-violet-400", gradient: "from-violet-500/20 to-violet-600/10" },
   { key: "done", label: "Done", icon: CheckCircle2, color: "text-emerald-400", gradient: "from-emerald-500/20 to-emerald-600/10" },
   { key: "cancelled", label: "Cancelled", icon: XCircle, color: "text-red-400", gradient: "from-red-500/20 to-red-600/10" },
@@ -73,11 +73,11 @@ export function ProjectContent({ project, issues, workspaceSlug, projectId, proj
             </Link>
             <div className="flex items-center gap-4">
               {project.icon ? (
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-amber-500/10 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center">
                   <span className="text-2xl">{project.icon}</span>
                 </div>
               ) : (
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-amber-500/10 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center">
                   <ListTodo className="h-6 w-6 text-primary" />
                 </div>
               )}
@@ -163,7 +163,7 @@ export function ProjectContent({ project, issues, workspaceSlug, projectId, proj
                               initial={{ width: 0 }}
                               animate={{ width: `${(projectStats.inProgress / projectStats.totalIssues) * 100}%` }}
                               transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
-                              className="h-full bg-gradient-to-r from-amber-500 to-yellow-400"
+                              className="h-full bg-gradient-to-r from-orange-500 to-orange-300"
                             />
                           )}
                         </>

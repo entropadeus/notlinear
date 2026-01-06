@@ -59,9 +59,9 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {} }: 
       label: "Open Issues",
       value: totals.openIssues,
       icon: Circle,
-      gradient: "from-amber-500/20 to-amber-600/10",
-      iconColor: "text-amber-400",
-      glow: "shadow-amber-500/5",
+      gradient: "from-orange-500/20 to-orange-600/10",
+      iconColor: "text-orange-400",
+      glow: "shadow-orange-500/5",
     },
     {
       label: "Completed",
@@ -84,7 +84,7 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {} }: 
       >
         <div className="flex items-center gap-4 mb-2">
           <Image
-            src="/notlinear-icon.png"
+            src="/NotLinear-icon.png"
             alt="NotLinear"
             width={40}
             height={40}
@@ -228,7 +228,7 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {} }: 
                           <span>{stats.totalProjects} project{stats.totalProjects !== 1 ? "s" : ""}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Activity className="h-3.5 w-3.5 text-amber-400/70" />
+                          <Activity className="h-3.5 w-3.5 text-orange-400/70" />
                           <span>{stats.openIssues} open</span>
                         </div>
                       </div>
@@ -245,7 +245,7 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {} }: 
                               whileInView={{ width: `${completionRate}%` }}
                               viewport={{ once: true }}
                               transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-                              className="h-full bg-gradient-to-r from-primary to-amber-500 rounded-full"
+                              className="h-full bg-gradient-to-r from-primary to-orange-500 rounded-full"
                             />
                           </div>
                         </div>
@@ -267,7 +267,7 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {} }: 
           transition={{ delay: 0.2 }}
           className="flex flex-col items-center justify-center py-16"
         >
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-amber-500/10 flex items-center justify-center mb-5">
+          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center mb-5">
             <FolderKanban className="h-8 w-8 text-primary" />
           </div>
           <h3 className="text-lg font-semibold mb-2">No workspaces yet</h3>

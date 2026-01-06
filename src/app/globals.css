@@ -6,61 +6,61 @@
 
 @layer base {
   :root {
-    /* Midnight Workshop - Light Mode (inverted for contrast) */
-    --background: 40 20% 98%;
-    --foreground: 30 10% 10%;
-    --card: 40 15% 96%;
-    --card-foreground: 30 10% 10%;
-    --popover: 40 20% 98%;
-    --popover-foreground: 30 10% 10%;
-    --primary: 35 100% 50%;
-    --primary-foreground: 30 10% 5%;
-    --secondary: 35 20% 92%;
-    --secondary-foreground: 30 10% 20%;
-    --muted: 35 15% 92%;
-    --muted-foreground: 30 10% 45%;
-    --accent: 35 100% 50%;
-    --accent-foreground: 30 10% 5%;
+    /* NotLinear - Light Mode */
+    --background: 20 20% 98%;
+    --foreground: 20 10% 10%;
+    --card: 20 15% 96%;
+    --card-foreground: 20 10% 10%;
+    --popover: 20 20% 98%;
+    --popover-foreground: 20 10% 10%;
+    --primary: 16 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 16 20% 92%;
+    --secondary-foreground: 20 10% 20%;
+    --muted: 16 15% 92%;
+    --muted-foreground: 20 10% 45%;
+    --accent: 16 100% 50%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 35 15% 88%;
-    --input: 35 15% 88%;
-    --ring: 35 100% 50%;
+    --border: 16 15% 88%;
+    --input: 16 15% 88%;
+    --ring: 16 100% 50%;
     --radius: 0.625rem;
 
     /* Custom accent colors */
-    --amber: 35 100% 50%;
-    --amber-glow: 35 100% 50% / 0.15;
-    --surface-1: 40 15% 96%;
-    --surface-2: 40 12% 93%;
-    --surface-3: 40 10% 90%;
+    --amber: 16 100% 50%;
+    --amber-glow: 16 100% 50% / 0.15;
+    --surface-1: 20 15% 96%;
+    --surface-2: 20 12% 93%;
+    --surface-3: 20 10% 90%;
   }
 
   .dark {
-    /* Midnight Workshop - Dark Mode */
+    /* NotLinear - Dark Mode */
     --background: 220 20% 6%;
-    --foreground: 35 20% 92%;
+    --foreground: 16 20% 92%;
     --card: 220 18% 8%;
-    --card-foreground: 35 20% 92%;
+    --card-foreground: 16 20% 92%;
     --popover: 220 20% 7%;
-    --popover-foreground: 35 20% 92%;
-    --primary: 35 100% 55%;
-    --primary-foreground: 220 20% 6%;
+    --popover-foreground: 16 20% 92%;
+    --primary: 16 100% 55%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 220 15% 12%;
-    --secondary-foreground: 35 20% 85%;
+    --secondary-foreground: 16 20% 85%;
     --muted: 220 15% 12%;
     --muted-foreground: 220 10% 55%;
-    --accent: 35 100% 55%;
-    --accent-foreground: 220 20% 6%;
+    --accent: 16 100% 55%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     --border: 220 15% 14%;
     --input: 220 15% 14%;
-    --ring: 35 100% 55%;
+    --ring: 16 100% 55%;
 
     /* Custom accent colors */
-    --amber: 35 100% 55%;
-    --amber-glow: 35 100% 55% / 0.12;
+    --amber: 16 100% 55%;
+    --amber-glow: 16 100% 55% / 0.12;
     --surface-1: 220 18% 9%;
     --surface-2: 220 16% 11%;
     --surface-3: 220 14% 13%;
@@ -185,19 +185,19 @@
     background: linear-gradient(
       135deg,
       hsl(var(--primary)) 0%,
-      hsl(35 100% 45%) 100%
+      hsl(12 100% 45%) 100%
     );
     box-shadow:
       0 1px 2px hsl(var(--amber-glow)),
       0 4px 12px hsl(var(--amber-glow)),
-      inset 0 1px 0 hsl(35 100% 70% / 0.2);
+      inset 0 1px 0 hsl(16 100% 70% / 0.2);
   }
 
   .btn-premium:hover {
     box-shadow:
       0 1px 2px hsl(var(--amber-glow)),
       0 8px 24px hsl(var(--amber-glow)),
-      inset 0 1px 0 hsl(35 100% 70% / 0.3);
+      inset 0 1px 0 hsl(16 100% 70% / 0.3);
   }
 
   /* Section headers */
@@ -261,8 +261,8 @@
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(
       135deg,
-      hsl(35 100% 60%) 0%,
-      hsl(35 100% 45%) 100%
+      hsl(16 100% 60%) 0%,
+      hsl(12 100% 45%) 100%
     );
   }
 

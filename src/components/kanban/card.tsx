@@ -19,7 +19,7 @@ interface KanbanCardProps {
 const statusConfig = {
   backlog: { icon: Archive, color: "text-slate-400", bg: "bg-slate-500/10", spin: false },
   todo: { icon: Circle, color: "text-blue-400", bg: "bg-blue-500/10", spin: false },
-  in_progress: { icon: Loader2, color: "text-amber-400", bg: "bg-amber-500/10", spin: true },
+  in_progress: { icon: Loader2, color: "text-orange-400", bg: "bg-orange-500/10", spin: true },
   in_review: { icon: Clock, color: "text-violet-400", bg: "bg-violet-500/10", spin: false },
   done: { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/10", spin: false },
   cancelled: { icon: XCircle, color: "text-red-400", bg: "bg-red-500/10", spin: false },
@@ -28,7 +28,7 @@ const statusConfig = {
 const priorityConfig = {
   urgent: { dot: "bg-red-400", label: "Urgent" },
   high: { dot: "bg-orange-400", label: "High" },
-  medium: { dot: "bg-amber-400", label: "Medium" },
+  medium: { dot: "bg-orange-400", label: "Medium" },
   low: { dot: "bg-slate-400", label: "Low" },
   none: { dot: "", label: "" },
   no_priority: { dot: "", label: "" },

@@ -68,7 +68,7 @@ export function WorkspaceContent({
             </Button>
           </Link>
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-amber-500/10 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center">
               <Layers className="h-6 w-6 text-primary" />
             </div>
             <div>
@@ -150,7 +150,7 @@ export function WorkspaceContent({
                         {project.icon ? (
                           <span className="text-2xl">{project.icon}</span>
                         ) : (
-                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-amber-500/10 flex items-center justify-center">
+                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center">
                             <FolderKanban className="h-4 w-4 text-primary" />
                           </div>
                         )}
@@ -182,7 +182,7 @@ export function WorkspaceContent({
           transition={{ delay: 0.2 }}
           className="flex flex-col items-center justify-center py-16"
         >
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-amber-500/10 flex items-center justify-center mb-5">
+          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center mb-5">
             <FolderKanban className="h-8 w-8 text-primary" />
           </div>
           <h3 className="text-lg font-semibold mb-2">No projects yet</h3>

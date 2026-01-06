@@ -15,7 +15,7 @@ interface IssueListProps {
 const statusConfig = {
   backlog: { icon: Archive, color: "text-slate-400", bg: "bg-slate-500/10" },
   todo: { icon: Circle, color: "text-blue-400", bg: "bg-blue-500/10" },
-  in_progress: { icon: Loader2, color: "text-amber-400", bg: "bg-amber-500/10" },
+  in_progress: { icon: Loader2, color: "text-orange-400", bg: "bg-orange-500/10" },
   in_review: { icon: Clock, color: "text-violet-400", bg: "bg-violet-500/10" },
   done: { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/10" },
   cancelled: { icon: XCircle, color: "text-red-400", bg: "bg-red-500/10" },
@@ -24,7 +24,7 @@ const statusConfig = {
 const priorityConfig = {
   urgent: { label: "Urgent", color: "text-red-400 bg-red-500/10" },
   high: { label: "High", color: "text-orange-400 bg-orange-500/10" },
-  medium: { label: "Medium", color: "text-amber-400 bg-amber-500/10" },
+  medium: { label: "Medium", color: "text-orange-400 bg-orange-500/10" },
   low: { label: "Low", color: "text-slate-400 bg-slate-500/10" },
   no_priority: { label: "", color: "" },
 }
@@ -85,7 +85,7 @@ export function IssueList({ issues, workspaceSlug }: IssueListProps) {
           animate={{ opacity: 1, scale: 1 }}
           className="flex flex-col items-center justify-center py-16"
         >
-          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/20 to-amber-500/10 flex items-center justify-center mb-4">
+          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center mb-4">
             <ListTodo className="h-7 w-7 text-primary" />
           </div>
           <h3 className="text-base font-semibold mb-1">No issues yet</h3>

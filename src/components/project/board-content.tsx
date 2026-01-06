@@ -47,11 +47,11 @@ export function BoardContent({ project, issues, workspaceSlug, projectId }: Boar
           </Link>
           <div className="flex items-center gap-3">
             {project.icon ? (
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-amber-500/10 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center">
                 <span className="text-xl">{project.icon}</span>
               </div>
             ) : (
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-amber-500/10 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center">
                 <LayoutGrid className="h-5 w-5 text-primary" />
               </div>
             )}

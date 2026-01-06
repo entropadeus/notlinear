@@ -76,7 +76,7 @@ const config = {
         'glow': '0 0 20px hsl(var(--amber-glow))',
         'glow-sm': '0 0 10px hsl(var(--amber-glow))',
         'glow-lg': '0 0 40px hsl(var(--amber-glow))',
-        'inner-glow': 'inset 0 1px 0 hsl(35 100% 70% / 0.1)',
+        'inner-glow': 'inset 0 1px 0 hsl(16 100% 70% / 0.1)',
         'card': '0 1px 3px hsl(var(--foreground) / 0.04), 0 4px 12px hsl(var(--foreground) / 0.03)',
         'card-hover': '0 4px 12px hsl(var(--foreground) / 0.08), 0 8px 24px hsl(var(--foreground) / 0.06)',
       },

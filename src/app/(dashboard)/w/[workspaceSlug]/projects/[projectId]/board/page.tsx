@@ -5,6 +5,8 @@ import { getProject } from "@/lib/actions/projects"
 import { getIssues } from "@/lib/actions/issues"
 import { getWorkspaceBySlug } from "@/lib/actions/workspaces"
 import { KanbanBoard } from "@/components/kanban/board"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 
 export default async function ProjectBoardPage({
   params,
@@ -31,7 +33,13 @@ export default async function ProjectBoardPage({
   return (
     <div className="flex h-screen flex-col">
       <div className="border-b p-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/w/${params.workspaceSlug}/projects/${params.projectId}`}
+            className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
           {project.icon && <span className="text-2xl">{project.icon}</span>}
           <h1 className="text-2xl font-bold">{project.name}</h1>
         </div>

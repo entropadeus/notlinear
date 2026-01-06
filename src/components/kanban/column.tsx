@@ -34,10 +34,10 @@ const columnConfig = {
   },
   in_progress: {
     icon: Loader2,
-    color: "text-amber-400",
-    gradient: "from-amber-500/20",
-    borderColor: "border-amber-400/50",
-    bgHover: "bg-amber-500/5",
+    color: "text-orange-400",
+    gradient: "from-orange-500/20",
+    borderColor: "border-orange-400/50",
+    bgHover: "bg-orange-500/5",
     spin: true
   },
   in_review: {

@@ -24,16 +24,16 @@ export default function RootLoading() {
             className="relative"
             animate={{
               boxShadow: [
-                "0 0 20px hsl(35 100% 55% / 0.3)",
-                "0 0 40px hsl(35 100% 55% / 0.5)",
-                "0 0 20px hsl(35 100% 55% / 0.3)",
+                "0 0 20px hsl(16 100% 55% / 0.3)",
+                "0 0 40px hsl(16 100% 55% / 0.5)",
+                "0 0 20px hsl(16 100% 55% / 0.3)",
               ],
             }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             style={{ borderRadius: "1rem" }}
           >
             <Image
-              src="/notlinear-icon.png"
+              src="/NotLinear-icon.png"
               alt="NotLinear"
               width={64}
               height={64}
