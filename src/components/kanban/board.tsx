@@ -1,13 +1,29 @@
 "use client"
 
-import { Issue } from "@/lib/db/schema"
-import { useState } from "react"
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCorners } from "@dnd-kit/core"
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { Issue } from "@/lib/actions/issues"
+import { useState, useCallback, useMemo } from "react"
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  DragOverEvent,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
+  getFirstCollision,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  MeasuringStrategy,
+  UniqueIdentifier,
+} from "@dnd-kit/core"
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { KanbanColumn } from "./column"
 import { KanbanCard } from "./card"
-import { motion } from "framer-motion"
-import { updateIssue } from "@/lib/actions/issues"
+import { motion, AnimatePresence } from "framer-motion"
+import { updateIssue, updateIssuePosition } from "@/lib/actions/issues"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 
@@ -25,56 +41,231 @@ const statuses = [
   { id: "done", title: "Done" },
 ]
 
-export function KanbanBoard({ issues, projectId, workspaceSlug }: KanbanBoardProps) {
-  const { toast } = useToast()
-  const router = useRouter()
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [isUpdating, setIsUpdating] = useState(false)
+const STATUS_IDS = statuses.map((s) => s.id)
 
-  const issuesByStatus = statuses.reduce((acc, status) => {
-    acc[status.id] = issues.filter((issue) => issue.status === status.id)
-    return acc
-  }, {} as Record<string, Issue[]>)
+// Custom collision detection that prioritizes columns, then cards
+function customCollisionDetection(args: Parameters<typeof closestCenter>[0]) {
+  // First, check if we're over a column (droppable)
+  const pointerCollisions = pointerWithin(args)
+  const intersections = rectIntersection(args)
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string)
+  // Combine collisions
+  const collisions = [...pointerCollisions, ...intersections]
+
+  // If we have collisions, find the first valid one
+  const firstCollision = getFirstCollision(collisions, "id")
+
+  if (firstCollision) {
+    const overId = firstCollision as string
+    // If it's a status column, return it
+    if (STATUS_IDS.includes(overId)) {
+      return [{ id: overId }]
+    }
+    // Otherwise, return the collision (it's a card)
+    return [{ id: overId }]
   }
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  // Fallback to closest center
+  return closestCenter(args)
+}
+
+export function KanbanBoard({ issues: initialIssues, projectId, workspaceSlug }: KanbanBoardProps) {
+  const { toast } = useToast()
+  const router = useRouter()
+
+  // Local state for optimistic updates
+  const [issues, setIssues] = useState<Issue[]>(initialIssues)
+  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null)
+  const [overId, setOverId] = useState<UniqueIdentifier | null>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  // Sync with server data when it changes
+  useMemo(() => {
+    setIssues(initialIssues)
+  }, [initialIssues])
+
+  // Configure sensors for better drag experience
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required before drag starts
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200, // 200ms delay for touch devices
+        tolerance: 5,
+      },
+    })
+  )
+
+  // Organize issues by status with position sorting
+  const issuesByStatus = useMemo(() => {
+    return statuses.reduce((acc, status) => {
+      acc[status.id] = issues
+        .filter((issue) => issue.status === status.id)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      return acc
+    }, {} as Record<string, Issue[]>)
+  }, [issues])
+
+  // Find which column an issue belongs to
+  const findContainer = useCallback((id: UniqueIdentifier): string | undefined => {
+    if (STATUS_IDS.includes(id as string)) {
+      return id as string
+    }
+
+    for (const [statusId, statusIssues] of Object.entries(issuesByStatus)) {
+      if (statusIssues.some((issue) => issue.id === id)) {
+        return statusId
+      }
+    }
+
+    return undefined
+  }, [issuesByStatus])
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id)
+    setOverId(null)
+  }, [])
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event
+
+    if (!over) {
+      setOverId(null)
+      return
+    }
+
+    setOverId(over.id)
+
+    const activeContainer = findContainer(active.id)
+    const overContainer = findContainer(over.id)
+
+    if (!activeContainer || !overContainer || activeContainer === overContainer) {
+      return
+    }
+
+    // Moving to a different column - update local state optimistically
+    setIssues((prev) => {
+      const activeIssue = prev.find((i) => i.id === active.id)
+      if (!activeIssue) return prev
+
+      // Calculate new position (at the end of the target column)
+      const targetColumnIssues = prev.filter((i) => i.status === overContainer)
+      const maxPosition = targetColumnIssues.length > 0
+        ? Math.max(...targetColumnIssues.map((i) => i.position ?? 0)) + 1
+        : 0
+
+      return prev.map((issue) =>
+        issue.id === active.id
+          ? { ...issue, status: overContainer, position: maxPosition }
+          : issue
+      )
+    })
+  }, [findContainer])
+
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    const { active, over } = event
+
     setActiveId(null)
+    setOverId(null)
 
     if (!over) return
 
-    const issueId = active.id as string
-    const newStatus = over.id as string
+    const activeId = active.id as string
+    const overId = over.id as string
 
-    // Find the issue
-    const issue = issues.find((i) => i.id === issueId)
-    if (!issue || issue.status === newStatus) return
+    const activeContainer = findContainer(activeId)
+    let overContainer = findContainer(overId)
+
+    // If dropped on a status column directly
+    if (STATUS_IDS.includes(overId)) {
+      overContainer = overId
+    }
+
+    if (!activeContainer || !overContainer) return
+
+    const activeIssue = issues.find((i) => i.id === activeId)
+    if (!activeIssue) return
+
+    // Check if anything changed
+    const originalIssue = initialIssues.find((i) => i.id === activeId)
+    if (!originalIssue) return
+
+    // Calculate new position
+    let newPosition: number
+    const targetIssues = issuesByStatus[overContainer].filter((i) => i.id !== activeId)
+
+    if (overId === overContainer || targetIssues.length === 0) {
+      // Dropped on column or empty column - put at end
+      newPosition = targetIssues.length > 0
+        ? Math.max(...targetIssues.map((i) => i.position ?? 0)) + 1
+        : 0
+    } else {
+      // Dropped on a card - insert at that position
+      const overIndex = targetIssues.findIndex((i) => i.id === overId)
+      if (overIndex >= 0) {
+        const overIssue = targetIssues[overIndex]
+        newPosition = overIssue.position ?? overIndex
+      } else {
+        newPosition = targetIssues.length
+      }
+    }
+
+    // If nothing changed, don't make API call
+    if (originalIssue.status === overContainer && originalIssue.position === newPosition) {
+      return
+    }
+
+    // Update local state optimistically
+    setIssues((prev) => {
+      return prev.map((issue) =>
+        issue.id === activeId
+          ? { ...issue, status: overContainer, position: newPosition }
+          : issue
+      )
+    })
 
     setIsUpdating(true)
     try {
-      await updateIssue(issueId, { status: newStatus })
+      await updateIssuePosition(activeId, overContainer, newPosition)
       router.refresh()
     } catch (error) {
+      // Revert on error
+      setIssues(initialIssues)
       toast({
         title: "Error",
-        description: "Failed to update issue status",
+        description: "Failed to update issue",
         variant: "destructive",
       })
     } finally {
       setIsUpdating(false)
     }
-  }
+  }, [findContainer, issues, initialIssues, issuesByStatus, router, toast])
+
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null)
+    setOverId(null)
+    // Revert to original state
+    setIssues(initialIssues)
+  }, [initialIssues])
 
   const activeIssue = activeId ? issues.find((i) => i.id === activeId) : null
 
   return (
     <DndContext
-      collisionDetection={closestCorners}
+      sensors={sensors}
+      collisionDetection={customCollisionDetection}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+      measuring={{
+        droppable: {
+          strategy: MeasuringStrategy.Always,
+        },
+      }}
     >
       <div className="flex gap-4 overflow-x-auto pb-4">
         {statuses.map((status, index) => (
@@ -88,17 +279,28 @@ export function KanbanBoard({ issues, projectId, workspaceSlug }: KanbanBoardPro
               status={status}
               issues={issuesByStatus[status.id] || []}
               workspaceSlug={workspaceSlug}
+              isOver={overId === status.id}
             />
           </motion.div>
         ))}
       </div>
 
-      <DragOverlay>
-        {activeIssue ? (
-          <div className="rotate-3 opacity-90">
-            <KanbanCard issue={activeIssue} workspaceSlug={workspaceSlug} />
-          </div>
-        ) : null}
+      <DragOverlay dropAnimation={{
+        duration: 200,
+        easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+      }}>
+        <AnimatePresence>
+          {activeIssue ? (
+            <motion.div
+              initial={{ scale: 1, rotate: 0 }}
+              animate={{ scale: 1.05, rotate: 3 }}
+              exit={{ scale: 1, rotate: 0 }}
+              className="opacity-95 shadow-xl"
+            >
+              <KanbanCard issue={activeIssue} workspaceSlug={workspaceSlug} isDragOverlay />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </DragOverlay>
     </DndContext>
   )

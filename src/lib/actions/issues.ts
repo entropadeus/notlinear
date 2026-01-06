@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db"
 import { issues, projects, workspaces, workspaceMembers, projects as projectsTable } from "@/lib/db/schema"
-import { eq, and, desc } from "drizzle-orm"
+import { eq, and, desc, asc } from "drizzle-orm"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
@@ -242,5 +242,102 @@ export async function deleteIssue(id: string) {
     .limit(1)
 
   revalidatePath(`/dashboard/${workspace[0]?.slug}/projects/${issue.projectId}`)
+}
+
+export async function updateIssuePosition(
+  id: string,
+  newStatus: string,
+  newPosition: number
+) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized")
+  }
+
+  const issue = await getIssue(id)
+  if (!issue) {
+    throw new Error("Issue not found")
+  }
+
+  // Get all issues in the target column
+  const targetIssues = await db
+    .select()
+    .from(issues)
+    .where(
+      and(
+        eq(issues.projectId, issue.projectId),
+        eq(issues.status, newStatus)
+      )
+    )
+    .orderBy(asc(issues.position))
+
+  // Calculate positions - shift other issues if needed
+  const issuesToUpdate: { id: string; position: number }[] = []
+
+  // If moving to a different column or changing position
+  const otherIssues = targetIssues.filter((i) => i.id !== id)
+
+  // Recalculate positions for all issues in the target column
+  let position = 0
+  let insertedActive = false
+
+  for (const targetIssue of otherIssues) {
+    if (position === newPosition && !insertedActive) {
+      // This is where the active issue should go
+      insertedActive = true
+      position++
+    }
+
+    if (targetIssue.position !== position) {
+      issuesToUpdate.push({ id: targetIssue.id, position })
+    }
+    position++
+  }
+
+  // If we haven't inserted yet, the active issue goes at the end
+  const finalPosition = insertedActive ? newPosition : position
+
+  // Update the dragged issue
+  const updateData: any = {
+    status: newStatus,
+    position: finalPosition,
+    updatedAt: new Date(),
+  }
+
+  // Handle completedAt for done status
+  if (newStatus === "done" && issue.status !== "done") {
+    updateData.completedAt = new Date()
+  } else if (newStatus !== "done" && issue.status === "done") {
+    updateData.completedAt = null
+  }
+
+  // Update the main issue
+  const [updated] = await db
+    .update(issues)
+    .set(updateData)
+    .where(eq(issues.id, id))
+    .returning()
+
+  // Update other affected issues' positions
+  for (const issueToUpdate of issuesToUpdate) {
+    await db
+      .update(issues)
+      .set({ position: issueToUpdate.position })
+      .where(eq(issues.id, issueToUpdate.id))
+  }
+
+  // Revalidate paths
+  const workspace = await db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.id, issue.workspaceId))
+    .limit(1)
+
+  if (workspace[0]) {
+    revalidatePath(`/w/${workspace[0].slug}/projects/${issue.projectId}`)
+    revalidatePath(`/w/${workspace[0].slug}/projects/${issue.projectId}/board`)
+  }
+
+  return updated
 }
 
