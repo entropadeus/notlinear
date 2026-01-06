@@ -237,3 +237,97 @@ export async function deleteProject(id: string) {
   revalidatePath(`/w/${workspace[0]?.slug}`)
 }
 
+export interface ProjectWithWorkspace {
+  id: string
+  name: string
+  description: string | null
+  color: string
+  icon: string | null
+  issueCounter: number
+  createdAt: Date
+  updatedAt: Date
+  workspace: {
+    id: string
+    name: string
+    slug: string
+  }
+}
+
+export interface ProjectWithStats extends ProjectWithWorkspace {
+  stats: {
+    totalIssues: number
+    openIssues: number
+    completedIssues: number
+  }
+}
+
+export async function getAllProjectsAcrossWorkspaces(): Promise<ProjectWithStats[]> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return []
+  }
+
+  // Get all workspaces the user is a member of
+  const userWorkspaces = await db
+    .select({
+      workspaceId: workspaceMembers.workspaceId,
+    })
+    .from(workspaceMembers)
+    .where(eq(workspaceMembers.userId, session.user.id))
+
+  if (userWorkspaces.length === 0) {
+    return []
+  }
+
+  const workspaceIds = userWorkspaces.map(w => w.workspaceId)
+
+  // Get all workspaces data
+  const workspacesData = await db
+    .select()
+    .from(workspaces)
+
+  const workspacesMap = new Map(workspacesData.map(w => [w.id, w]))
+
+  // Get all projects from user's workspaces
+  const allProjects: ProjectWithStats[] = []
+
+  for (const workspaceId of workspaceIds) {
+    const workspaceProjects = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.workspaceId, workspaceId))
+
+    const workspaceIssues = await db
+      .select()
+      .from(issues)
+      .where(eq(issues.workspaceId, workspaceId))
+
+    const workspace = workspacesMap.get(workspaceId)
+    if (!workspace) continue
+
+    for (const project of workspaceProjects) {
+      const projectIssues = workspaceIssues.filter(i => i.projectId === project.id)
+      allProjects.push({
+        ...project,
+        workspace: {
+          id: workspace.id,
+          name: workspace.name,
+          slug: workspace.slug,
+        },
+        stats: {
+          totalIssues: projectIssues.length,
+          openIssues: projectIssues.filter(i =>
+            i.status !== "done" && i.status !== "cancelled"
+          ).length,
+          completedIssues: projectIssues.filter(i => i.status === "done").length,
+        },
+      })
+    }
+  }
+
+  // Sort by most recently updated
+  return allProjects.sort((a, b) =>
+    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  )
+}
+

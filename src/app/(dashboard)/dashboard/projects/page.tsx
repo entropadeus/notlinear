@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { getWorkspaces } from "@/lib/actions/workspaces"
+import { getAllProjectsAcrossWorkspaces } from "@/lib/actions/projects"
 import { ProjectsContent } from "@/components/dashboard/projects-content"
 
 export default async function ProjectsPage() {
@@ -10,7 +10,7 @@ export default async function ProjectsPage() {
     redirect("/login")
   }
 
-  const workspaces = await getWorkspaces()
+  const projects = await getAllProjectsAcrossWorkspaces()
 
-  return <ProjectsContent workspaces={workspaces} />
+  return <ProjectsContent projects={projects} />
 }

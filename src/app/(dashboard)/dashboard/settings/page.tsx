@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { getCurrentUser } from "@/lib/actions/settings"
 import { SettingsContent } from "@/components/dashboard/settings-content"
 
 export default async function SettingsPage() {
@@ -9,5 +10,10 @@ export default async function SettingsPage() {
     redirect("/login")
   }
 
-  return <SettingsContent user={session.user} />
+  const user = await getCurrentUser()
+  if (!user) {
+    redirect("/login")
+  }
+
+  return <SettingsContent user={user} />
 }
