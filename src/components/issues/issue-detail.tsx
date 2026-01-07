@@ -1,6 +1,6 @@
 "use client"
 
-import { Issue } from "@/lib/db/schema"
+import { Issue } from "@/lib/actions/issues"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -14,6 +14,8 @@ import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import ReactMarkdown from "react-markdown"
 import { CommentSection } from "./comment-section"
+import { RevisionTimeline } from "./revision-timeline"
+import { type Revision } from "@/lib/actions/revisions"
 
 interface Comment {
   id: string
@@ -31,6 +33,7 @@ interface IssueDetailProps {
   issue: Issue
   workspaceSlug: string
   initialComments?: Comment[]
+  initialRevisions?: Revision[]
 }
 
 const statusOptions = [
@@ -50,7 +53,7 @@ const priorityOptions = [
   { value: "urgent", label: "Urgent" },
 ]
 
-export function IssueDetail({ issue, workspaceSlug, initialComments = [] }: IssueDetailProps) {
+export function IssueDetail({ issue, workspaceSlug, initialComments = [], initialRevisions = [] }: IssueDetailProps) {
   const { toast } = useToast()
   const router = useRouter()
   const [status, setStatus] = useState(issue.status)
@@ -190,6 +193,15 @@ export function IssueDetail({ issue, workspaceSlug, initialComments = [] }: Issu
                   </p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RevisionTimeline issueId={issue.id} initialRevisions={initialRevisions} />
             </CardContent>
           </Card>
         </div>

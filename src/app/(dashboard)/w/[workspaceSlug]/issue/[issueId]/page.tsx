@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { getIssues } from "@/lib/actions/issues"
 import { getComments } from "@/lib/actions/comments"
+import { getRevisions } from "@/lib/actions/revisions"
 import { IssueDetail } from "@/components/issues/issue-detail"
 import { getWorkspaceBySlug } from "@/lib/actions/workspaces"
 
@@ -29,12 +30,21 @@ export default async function IssuePage({
     redirect(`/w/${params.workspaceSlug}`)
   }
 
-  const comments = await getComments(issue.id)
+  // Fetch comments and revisions in parallel
+  const [comments, revisions] = await Promise.all([
+    getComments(issue.id),
+    getRevisions(issue.id),
+  ])
 
   return (
     <div className="flex h-screen">
       <div className="flex-1 overflow-auto p-8">
-        <IssueDetail issue={issue} workspaceSlug={params.workspaceSlug} initialComments={comments} />
+        <IssueDetail
+          issue={issue}
+          workspaceSlug={params.workspaceSlug}
+          initialComments={comments}
+          initialRevisions={revisions}
+        />
       </div>
     </div>
   )

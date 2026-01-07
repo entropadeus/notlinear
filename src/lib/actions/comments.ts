@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { comments, issues, workspaceMembers, workspaces } from "@/lib/db/schema"
+import { comments, issues, workspaceMembers, workspaces, users } from "@/lib/db/schema"
 import { eq, and, desc } from "drizzle-orm"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -44,6 +44,13 @@ export async function createComment(issueId: string, content: string) {
     })
     .returning()
 
+  // Get author info to return with comment
+  const [author] = await db
+    .select({ name: users.name, image: users.image })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1)
+
   const workspace = await db
     .select()
     .from(workspaces)
@@ -51,7 +58,12 @@ export async function createComment(issueId: string, content: string) {
     .limit(1)
 
   revalidatePath(`/dashboard/${workspace[0]?.slug}/issue/${issue.identifier}`)
-  return comment
+  revalidatePath(`/w/${workspace[0]?.slug}/issue/${issue.identifier}`)
+
+  return {
+    ...comment,
+    author: author || { name: null, image: null },
+  }
 }
 
 export async function getComments(issueId: string) {
@@ -82,11 +94,34 @@ export async function getComments(issueId: string) {
     return []
   }
 
-  return await db
-    .select()
+  const results = await db
+    .select({
+      id: comments.id,
+      content: comments.content,
+      issueId: comments.issueId,
+      authorId: comments.authorId,
+      createdAt: comments.createdAt,
+      updatedAt: comments.updatedAt,
+      authorName: users.name,
+      authorImage: users.image,
+    })
     .from(comments)
+    .leftJoin(users, eq(comments.authorId, users.id))
     .where(eq(comments.issueId, issueId))
     .orderBy(desc(comments.createdAt))
+
+  return results.map((r) => ({
+    id: r.id,
+    content: r.content,
+    issueId: r.issueId,
+    authorId: r.authorId,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+    author: {
+      name: r.authorName,
+      image: r.authorImage,
+    },
+  }))
 }
 
 export async function updateComment(commentId: string, content: string) {

@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { issues, projects, workspaces, workspaceMembers, projects as projectsTable } from "@/lib/db/schema"
+import { issues, projects, workspaces, workspaceMembers, projects as projectsTable, issueRevisions } from "@/lib/db/schema"
 import { eq, and, desc, asc } from "drizzle-orm"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -183,7 +183,8 @@ export async function updateIssue(
     priority?: string
     assigneeId?: string | null
     parentId?: string | null
-  }
+  },
+  revisionMessage?: string
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
@@ -193,6 +194,25 @@ export async function updateIssue(
   const issue = await getIssue(id)
   if (!issue) {
     throw new Error("Issue not found")
+  }
+
+  // Track changes for revision history
+  const changes: Array<{ field: string; oldValue: string | null; newValue: string | null }> = []
+
+  if (data.title !== undefined && data.title !== issue.title) {
+    changes.push({ field: "title", oldValue: issue.title, newValue: data.title })
+  }
+  if (data.description !== undefined && data.description !== issue.description) {
+    changes.push({ field: "description", oldValue: issue.description, newValue: data.description || null })
+  }
+  if (data.status !== undefined && data.status !== issue.status) {
+    changes.push({ field: "status", oldValue: issue.status, newValue: data.status })
+  }
+  if (data.priority !== undefined && data.priority !== issue.priority) {
+    changes.push({ field: "priority", oldValue: issue.priority, newValue: data.priority })
+  }
+  if (data.assigneeId !== undefined && data.assigneeId !== issue.assigneeId) {
+    changes.push({ field: "assignee", oldValue: issue.assigneeId, newValue: data.assigneeId })
   }
 
   const updateData: any = {
@@ -212,6 +232,20 @@ export async function updateIssue(
     .where(eq(issues.id, id))
     .returning()
 
+  // Create revisions for all changes
+  if (changes.length > 0) {
+    await db.insert(issueRevisions).values(
+      changes.map((change) => ({
+        issueId: id,
+        field: change.field,
+        oldValue: change.oldValue,
+        newValue: change.newValue,
+        authorId: session.user.id,
+        message: revisionMessage,
+      }))
+    )
+  }
+
   const workspace = await db
     .select()
     .from(workspaces)
@@ -219,6 +253,7 @@ export async function updateIssue(
     .limit(1)
 
   revalidatePath(`/dashboard/${workspace[0]?.slug}/issue/${updated.identifier}`)
+  revalidatePath(`/w/${workspace[0]?.slug}/issue/${updated.identifier}`)
   return updated
 }
 
@@ -317,6 +352,17 @@ export async function updateIssuePosition(
     .set(updateData)
     .where(eq(issues.id, id))
     .returning()
+
+  // Track status change in revision history
+  if (newStatus !== issue.status) {
+    await db.insert(issueRevisions).values({
+      issueId: id,
+      field: "status",
+      oldValue: issue.status,
+      newValue: newStatus,
+      authorId: session.user.id,
+    })
+  }
 
   // Update other affected issues' positions
   for (const issueToUpdate of issuesToUpdate) {

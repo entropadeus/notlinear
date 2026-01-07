@@ -126,6 +126,18 @@ export const comments = sqliteTable("comments", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
+// Issue revisions (version history for text fields)
+export const issueRevisions = sqliteTable("issue_revisions", {
+  id: text("id").primaryKey().$defaultFn(generateId),
+  issueId: text("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+  field: text("field").notNull(), // 'title' | 'description' | 'status' | 'priority' | 'assignee'
+  oldValue: text("old_value"), // null for initial creation
+  newValue: text("new_value"),
+  authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  message: text("message"), // optional commit-like message explaining the change
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
 // Git commits (linked to issues)
 export const gitCommits = sqliteTable("git_commits", {
   id: text("id").primaryKey().$defaultFn(generateId),
@@ -212,6 +224,7 @@ export const issuesRelations = relations(issues, ({ one, many }) => ({
   subIssues: many(issues, { relationName: "parentIssue" }),
   labels: many(issueLabels),
   comments: many(comments),
+  revisions: many(issueRevisions),
   commits: many(issueCommits),
   pullRequests: many(issuePullRequests),
 }));
@@ -229,6 +242,11 @@ export const issueLabelsRelations = relations(issueLabels, ({ one }) => ({
 export const commentsRelations = relations(comments, ({ one }) => ({
   issue: one(issues, { fields: [comments.issueId], references: [issues.id] }),
   author: one(users, { fields: [comments.authorId], references: [users.id] }),
+}));
+
+export const issueRevisionsRelations = relations(issueRevisions, ({ one }) => ({
+  issue: one(issues, { fields: [issueRevisions.issueId], references: [issues.id] }),
+  author: one(users, { fields: [issueRevisions.authorId], references: [users.id] }),
 }));
 
 export const gitCommitsRelations = relations(gitCommits, ({ many }) => ({
