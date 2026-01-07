@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useTransition } from "react"
+import { useState, useEffect, useTransition, useCallback } from "react"
 import {
   Dialog,
   DialogContent,
@@ -122,17 +122,7 @@ export function TeamManagementDialog({
 
   const isAdmin = currentUserRole === "owner" || currentUserRole === "admin"
 
-  // Load data when dialog opens
-  useEffect(() => {
-    if (open) {
-      loadMembers()
-      if (isAdmin) {
-        loadInvites()
-      }
-    }
-  }, [open, workspace.id, isAdmin])
-
-  async function loadMembers() {
+  const loadMembers = useCallback(async () => {
     setLoadingMembers(true)
     try {
       const data = await getWorkspaceMembers(workspace.id)
@@ -141,9 +131,9 @@ export function TeamManagementDialog({
       toast({ title: "Failed to load members", variant: "destructive" })
     }
     setLoadingMembers(false)
-  }
+  }, [workspace.id, toast])
 
-  async function loadInvites() {
+  const loadInvites = useCallback(async () => {
     setLoadingInvites(true)
     try {
       const data = await getWorkspaceInvites(workspace.id)
@@ -152,7 +142,17 @@ export function TeamManagementDialog({
       toast({ title: "Failed to load invites", variant: "destructive" })
     }
     setLoadingInvites(false)
-  }
+  }, [workspace.id, toast])
+
+  // Load data when dialog opens
+  useEffect(() => {
+    if (open) {
+      loadMembers()
+      if (isAdmin) {
+        loadInvites()
+      }
+    }
+  }, [open, isAdmin, loadMembers, loadInvites])
 
   function handleCreateInvite() {
     startTransition(async () => {

@@ -1,7 +1,7 @@
 "use client"
 
 import { Issue } from "@/lib/actions/issues"
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import {
   DndContext,
   DragEndEvent,
@@ -26,11 +26,15 @@ import { motion, AnimatePresence } from "framer-motion"
 import { updateIssue, updateIssuePosition } from "@/lib/actions/issues"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
+import { useIssueUpdates } from "@/lib/realtime/use-realtime"
+import type { RealtimeEvent } from "@/lib/realtime/events"
+import { Users, Wifi, WifiOff } from "lucide-react"
 
 interface KanbanBoardProps {
   issues: Issue[]
   projectId: string
   workspaceSlug: string
+  workspaceId: string
 }
 
 const statuses = [
@@ -69,7 +73,7 @@ function customCollisionDetection(args: Parameters<typeof closestCenter>[0]) {
   return closestCenter(args)
 }
 
-export function KanbanBoard({ issues: initialIssues, projectId, workspaceSlug }: KanbanBoardProps) {
+export function KanbanBoard({ issues: initialIssues, projectId, workspaceSlug, workspaceId }: KanbanBoardProps) {
   const { toast } = useToast()
   const router = useRouter()
 
@@ -79,8 +83,44 @@ export function KanbanBoard({ issues: initialIssues, projectId, workspaceSlug }:
   const [overId, setOverId] = useState<UniqueIdentifier | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
 
+  // Real-time updates subscription
+  const handleRealtimeEvent = useCallback((event: RealtimeEvent) => {
+    // Only handle events for this project
+    if (event.projectId !== projectId) return
+
+    switch (event.type) {
+      case "issue_created": {
+        const newIssue = event.payload.issue as Issue
+        setIssues((prev) => {
+          // Don't add if already exists
+          if (prev.some((i) => i.id === newIssue.id)) return prev
+          return [...prev, newIssue]
+        })
+        toast({ title: "New issue created", description: newIssue.title })
+        break
+      }
+      case "issue_updated":
+      case "issue_moved": {
+        const updatedIssue = event.payload.issue as Partial<Issue> & { id: string }
+        setIssues((prev) =>
+          prev.map((issue) =>
+            issue.id === updatedIssue.id ? { ...issue, ...updatedIssue } : issue
+          )
+        )
+        break
+      }
+      case "issue_deleted": {
+        const deletedId = event.payload.issueId as string
+        setIssues((prev) => prev.filter((i) => i.id !== deletedId))
+        break
+      }
+    }
+  }, [projectId, toast])
+
+  const { isConnected, onlineUsers } = useIssueUpdates(workspaceId, projectId, handleRealtimeEvent)
+
   // Sync with server data when it changes
-  useMemo(() => {
+  useEffect(() => {
     setIssues(initialIssues)
   }, [initialIssues])
 
@@ -267,6 +307,29 @@ export function KanbanBoard({ issues: initialIssues, projectId, workspaceSlug }:
         },
       }}
     >
+      {/* Real-time status indicator */}
+      <div className="flex items-center justify-end gap-3 mb-4 text-sm">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-1 border border-border/50">
+          {isConnected ? (
+            <>
+              <Wifi className="h-3.5 w-3.5 text-emerald-500" />
+              <span className="text-emerald-500">Live</span>
+            </>
+          ) : (
+            <>
+              <WifiOff className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-muted-foreground">Connecting...</span>
+            </>
+          )}
+        </div>
+        {onlineUsers.length > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-1 border border-border/50">
+            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-muted-foreground">{onlineUsers.length} online</span>
+          </div>
+        )}
+      </div>
+
       <div className="flex gap-4 overflow-x-auto pb-4">
         {statuses.map((status, index) => (
           <motion.div
