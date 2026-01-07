@@ -86,6 +86,26 @@ export async function getWorkspaceBySlug(slug: string) {
   return workspace
 }
 
+export async function getCurrentUserRole(workspaceId: string): Promise<"owner" | "admin" | "member" | null> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return null
+  }
+
+  const [member] = await db
+    .select({ role: workspaceMembers.role })
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.userId, session.user.id)
+      )
+    )
+    .limit(1)
+
+  return (member?.role as "owner" | "admin" | "member") || null
+}
+
 export async function updateWorkspace(id: string, data: { name?: string; description?: string }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {

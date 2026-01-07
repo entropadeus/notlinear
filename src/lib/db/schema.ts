@@ -180,6 +180,30 @@ export const issuePullRequests = sqliteTable("issue_pull_requests", {
   pullRequestId: text("pull_request_id").notNull().references(() => pullRequests.id, { onDelete: "cascade" }),
 });
 
+// Workspace invites - for team invitation tokens
+// Designed for both link-based and future email-specific invites
+export const workspaceInvites = sqliteTable("workspace_invites", {
+  id: text("id").primaryKey().$defaultFn(generateId),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  // Cryptographically secure token - unique index for fast lookups
+  token: text("token").notNull().unique(),
+  // Who created this invite (must be owner/admin)
+  createdById: text("created_by_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  // Role assigned to users who join via this invite
+  role: text("role").notNull().default("member"), // "member" | "admin"
+  // Usage limits - null means unlimited
+  maxUses: integer("max_uses"),
+  usedCount: integer("used_count").notNull().default(0),
+  // Optional expiration
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+  // For future email-specific invites: null = link invite, set = email-specific
+  email: text("email"),
+  // Status for email invites: pending, accepted, expired, revoked
+  status: text("status").notNull().default("active"), // "active" | "revoked"
+  // Timestamps
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
@@ -188,6 +212,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   workspaceMemberships: many(workspaceMembers),
   assignedIssues: many(issues),
   comments: many(comments),
+  createdInvites: many(workspaceInvites),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -204,6 +229,7 @@ export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
   projects: many(projects),
   issues: many(issues),
   labels: many(labels),
+  invites: many(workspaceInvites),
 }));
 
 export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) => ({
@@ -265,4 +291,9 @@ export const pullRequestsRelations = relations(pullRequests, ({ many }) => ({
 export const issuePullRequestsRelations = relations(issuePullRequests, ({ one }) => ({
   issue: one(issues, { fields: [issuePullRequests.issueId], references: [issues.id] }),
   pullRequest: one(pullRequests, { fields: [issuePullRequests.pullRequestId], references: [pullRequests.id] }),
+}));
+
+export const workspaceInvitesRelations = relations(workspaceInvites, ({ one }) => ({
+  workspace: one(workspaces, { fields: [workspaceInvites.workspaceId], references: [workspaces.id] }),
+  createdBy: one(users, { fields: [workspaceInvites.createdById], references: [users.id] }),
 }));
