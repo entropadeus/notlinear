@@ -6,14 +6,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plus, MoreHorizontal, Pencil, ArrowLeft, ArrowRight, FolderKanban, Layers } from "lucide-react"
+import { Plus, MoreHorizontal, Pencil, ArrowLeft, ArrowRight, FolderKanban, Layers, Users } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { useState } from "react"
 import { CreateProjectDialog } from "./create-project-dialog"
 import { EditWorkspaceDialog } from "./edit-workspace-dialog"
+import { TeamManagementDialog } from "./team-management-dialog"
 import { WorkspaceStatsCard } from "@/components/stats/workspace-stats-card"
 import { ProjectStatsCard } from "@/components/stats/project-stats-card"
 import { WorkspaceStats, ProjectStats } from "@/lib/actions/stats"
@@ -39,6 +41,7 @@ interface WorkspaceContentProps {
   workspaceSlug: string
   workspaceStats?: WorkspaceStats | null
   projectStats?: Record<string, ProjectStats>
+  currentUserRole: "owner" | "admin" | "member"
 }
 
 export function WorkspaceContent({
@@ -46,10 +49,14 @@ export function WorkspaceContent({
   projects,
   workspaceSlug,
   workspaceStats,
-  projectStats = {}
+  projectStats = {},
+  currentUserRole,
 }: WorkspaceContentProps) {
   const [showCreateProject, setShowCreateProject] = useState(false)
   const [showEditWorkspace, setShowEditWorkspace] = useState(false)
+  const [showTeamManagement, setShowTeamManagement] = useState(false)
+
+  const isAdmin = currentUserRole === "owner" || currentUserRole === "admin"
 
   return (
     <>
@@ -89,10 +96,19 @@ export function WorkspaceContent({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 glass">
-              <DropdownMenuItem onClick={() => setShowEditWorkspace(true)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit workspace
+              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>
+                <Users className="mr-2 h-4 w-4" />
+                Manage team
               </DropdownMenuItem>
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setShowEditWorkspace(true)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit workspace
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -206,6 +222,13 @@ export function WorkspaceContent({
         open={showEditWorkspace}
         onOpenChange={setShowEditWorkspace}
         workspace={workspace}
+      />
+
+      <TeamManagementDialog
+        open={showTeamManagement}
+        onOpenChange={setShowTeamManagement}
+        workspace={workspace}
+        currentUserRole={currentUserRole}
       />
     </div>
     </>

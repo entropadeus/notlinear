@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { getWorkspaceBySlug } from "@/lib/actions/workspaces"
+import { getWorkspaceBySlug, getCurrentUserRole } from "@/lib/actions/workspaces"
 import { getProjects } from "@/lib/actions/projects"
 import { getWorkspaceStats, getAllProjectsStats, ProjectStats } from "@/lib/actions/stats"
 import { WorkspaceContent } from "@/components/workspace/workspace-content"
@@ -21,10 +21,11 @@ export default async function WorkspacePage({
     redirect("/dashboard")
   }
 
-  const [projects, workspaceStats, projectStatsMap] = await Promise.all([
+  const [projects, workspaceStats, projectStatsMap, currentUserRole] = await Promise.all([
     getProjects(workspace.id),
     getWorkspaceStats(workspace.id),
     getAllProjectsStats(workspace.id),
+    getCurrentUserRole(workspace.id),
   ])
 
   // Convert Map to plain object for serialization
@@ -34,12 +35,13 @@ export default async function WorkspacePage({
   })
 
   return (
-    <WorkspaceContent 
-      workspace={workspace} 
-      projects={projects} 
+    <WorkspaceContent
+      workspace={workspace}
+      projects={projects}
       workspaceSlug={params.workspaceSlug}
       workspaceStats={workspaceStats}
       projectStats={projectStats}
+      currentUserRole={currentUserRole || "member"}
     />
   )
 }
