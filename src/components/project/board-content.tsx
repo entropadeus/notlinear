@@ -27,9 +27,10 @@ interface BoardContentProps {
   issues: Issue[]
   workspaceSlug: string
   projectId: string
+  workspaceId: string
 }
 
-export function BoardContent({ project, issues, workspaceSlug, projectId }: BoardContentProps) {
+export function BoardContent({ project, issues, workspaceSlug, projectId, workspaceId }: BoardContentProps) {
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
@@ -70,7 +71,7 @@ export function BoardContent({ project, issues, workspaceSlug, projectId }: Boar
         transition={{ delay: 0.1, duration: 0.3 }}
         className="flex-1 overflow-auto p-6"
       >
-        <KanbanBoard issues={issues as any} projectId={projectId} workspaceSlug={workspaceSlug} />
+        <KanbanBoard issues={issues as any} projectId={projectId} workspaceSlug={workspaceSlug} workspaceId={workspaceId} />
       </motion.div>
     </div>
   )

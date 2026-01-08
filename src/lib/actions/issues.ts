@@ -6,6 +6,7 @@ import { eq, and, desc, asc } from "drizzle-orm"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { createIssueEvent } from "@/lib/realtime/events"
 
 export async function createIssue(
   projectId: string,
@@ -81,6 +82,19 @@ export async function createIssue(
     .limit(1)
 
   revalidatePath(`/dashboard/${workspace[0]?.slug}/projects/${projectId}`)
+
+  // Broadcast real-time event
+  createIssueEvent("issue_created", project.workspaceId, projectId, issue.id, session.user.id, {
+    issue: {
+      id: issue.id,
+      identifier: issue.identifier,
+      title: issue.title,
+      status: issue.status,
+      priority: issue.priority,
+      position: issue.position,
+    },
+  })
+
   return issue
 }
 
@@ -254,6 +268,21 @@ export async function updateIssue(
 
   revalidatePath(`/dashboard/${workspace[0]?.slug}/issue/${updated.identifier}`)
   revalidatePath(`/w/${workspace[0]?.slug}/issue/${updated.identifier}`)
+
+  // Broadcast real-time event
+  createIssueEvent("issue_updated", issue.workspaceId, issue.projectId, id, session.user.id, {
+    issue: {
+      id: updated.id,
+      identifier: updated.identifier,
+      title: updated.title,
+      description: updated.description,
+      status: updated.status,
+      priority: updated.priority,
+      position: updated.position,
+    },
+    changes: changes.map((c) => ({ field: c.field, newValue: c.newValue })),
+  })
+
   return updated
 }
 
@@ -277,6 +306,12 @@ export async function deleteIssue(id: string) {
     .limit(1)
 
   revalidatePath(`/dashboard/${workspace[0]?.slug}/projects/${issue.projectId}`)
+
+  // Broadcast real-time event
+  createIssueEvent("issue_deleted", issue.workspaceId, issue.projectId, id, session.user.id, {
+    issueId: id,
+    identifier: issue.identifier,
+  })
 }
 
 export async function updateIssuePosition(
@@ -383,6 +418,21 @@ export async function updateIssuePosition(
     revalidatePath(`/w/${workspace[0].slug}/projects/${issue.projectId}`)
     revalidatePath(`/w/${workspace[0].slug}/projects/${issue.projectId}/board`)
   }
+
+  // Broadcast real-time event for position/status change
+  createIssueEvent("issue_moved", issue.workspaceId, issue.projectId, id, session.user.id, {
+    issue: {
+      id: updated.id,
+      identifier: updated.identifier,
+      title: updated.title,
+      status: updated.status,
+      priority: updated.priority,
+      position: updated.position,
+    },
+    previousStatus: issue.status,
+    newStatus,
+    newPosition: finalPosition,
+  })
 
   return updated
 }
