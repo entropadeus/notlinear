@@ -119,7 +119,7 @@ export function Sidebar() {
   }
 
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delayDuration={100}>
       <motion.aside
         initial={false}
         animate={{
@@ -176,11 +176,6 @@ export function Sidebar() {
                 </span>
               </button>
             </TooltipTrigger>
-            {isCollapsed && (
-              <TooltipContent side="right" sideOffset={10}>
-                Expand sidebar
-              </TooltipContent>
-            )}
           </Tooltip>
 
           {/* Collapse Toggle Button */}
@@ -202,42 +197,24 @@ export function Sidebar() {
               <Button
                 onClick={() => setShowCreateWorkspace(true)}
                 className={cn(
-                  "btn-premium text-primary-foreground font-semibold transition-all duration-200",
+                  "btn-premium text-primary-foreground font-semibold transition-all duration-200 overflow-hidden",
                   isCollapsed ? "w-full px-0 justify-center" : "w-full"
                 )}
                 size="sm"
               >
-                <motion.div
-                  animate={{ rotate: isCollapsed ? 0 : 0 }}
-                  whileHover={{ rotate: 90, scale: 1.1 }}
-                  transition={{ type: "spring", ...springConfig.icon }}
-                >
-                  <Plus className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
-                </motion.div>
-                <AnimatePresence mode="wait">
-                  {!isCollapsed && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0, filter: "blur(4px)" }}
-                      animate={{ opacity: 1, width: "auto", filter: "blur(0px)" }}
-                      exit={{ opacity: 0, width: 0, filter: "blur(4px)" }}
-                      transition={{
-                        type: "spring",
-                        ...springConfig.text,
-                        width: { type: "spring", ...springConfig.sidebar },
-                      }}
-                      className="whitespace-nowrap overflow-hidden"
-                    >
-                      New Workspace
-                    </motion.span>
+                <Plus className={cn("h-4 w-4 flex-shrink-0 transition-all duration-200", !isCollapsed && "mr-2")} />
+                <span
+                  className={cn(
+                    "whitespace-nowrap overflow-hidden transition-all duration-300 ease-out",
+                    isCollapsed
+                      ? "w-0 opacity-0 translate-y-2"
+                      : "w-auto opacity-100 translate-y-0"
                   )}
-                </AnimatePresence>
+                >
+                  New Workspace
+                </span>
               </Button>
             </TooltipTrigger>
-            {isCollapsed && (
-              <TooltipContent side="right" sideOffset={10}>
-                New Workspace
-              </TooltipContent>
-            )}
           </Tooltip>
         </div>
 
@@ -272,22 +249,14 @@ export function Sidebar() {
                         )} />
                       </motion.div>
 
-                      {/* Text - simple CSS transition for collapse */}
-                      <span
-                        className={cn(
-                          "whitespace-nowrap relative z-10 transition-all duration-200",
-                          isCollapsed ? "w-0 opacity-0 overflow-hidden" : "w-auto opacity-100"
-                        )}
-                      >
-                        {item.name}
-                      </span>
+                      {/* Text - hidden when collapsed */}
+                      {!isCollapsed && (
+                        <span className="whitespace-nowrap relative z-10">
+                          {item.name}
+                        </span>
+                      )}
                     </Link>
                   </TooltipTrigger>
-                  {isCollapsed && (
-                    <TooltipContent side="right" sideOffset={10}>
-                      {item.name}
-                    </TooltipContent>
-                  )}
                 </Tooltip>
               </div>
             )
@@ -345,11 +314,6 @@ export function Sidebar() {
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
-              {isCollapsed && (
-                <TooltipContent side="right" sideOffset={10}>
-                  {session?.user?.name}
-                </TooltipContent>
-              )}
             </Tooltip>
             <DropdownMenuContent align={isCollapsed ? "center" : "end"} side={isCollapsed ? "right" : "top"} className="w-56 glass">
               <DropdownMenuItem
