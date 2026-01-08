@@ -110,7 +110,7 @@ export function DeleteProjectDialog({
                   Hold on there...
                 </AlertDialogTitle>
                 <AlertDialogDescription className="text-base pt-2">
-                  You're about to delete <span className="font-semibold text-foreground">{projectIcon} {projectName}</span>.
+                  You&apos;re about to delete <span className="font-semibold text-foreground">{projectIcon} {projectName}</span>.
                   <br />
                   This is a <span className="text-red-500 font-medium">permanent</span> action.
                 </AlertDialogDescription>
@@ -273,7 +273,7 @@ export function DeleteProjectDialog({
                     Goodbye, {projectName}
                   </h3>
                   <p className="text-sm text-muted-foreground/70 italic">
-                    "The work you did here mattered."
+                    &ldquo;The work you did here mattered.&rdquo;
                   </p>
                 </motion.div>
 

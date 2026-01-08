@@ -5,16 +5,7 @@ import { Plus } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { IssueList } from "@/components/issues/issue-list"
-
-interface Issue {
-  id: string
-  identifier: string
-  title: string
-  description: string | null
-  status: string
-  priority: string
-  createdAt: Date
-}
+import { type Issue } from "@/lib/actions/issues"
 
 interface Project {
   id: string

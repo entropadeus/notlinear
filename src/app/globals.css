@@ -346,3 +346,65 @@
 .animate-fade-in-up {
   animation: fade-in-up 0.4s ease-out forwards;
 }
+
+/* ============================================
+   LOGO LOADER ANIMATIONS - Pure CSS, instant
+   ============================================ */
+
+@keyframes logo-breathing {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(16 100% 55% / 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 40px hsl(16 100% 55% / 0.5), 0 0 60px hsl(16 100% 55% / 0.2);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes logo-pulse-bg {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes loading-dot-bounce {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes logo-glow-subtle-anim {
+  0%, 100% {
+    box-shadow: 0 0 12px hsl(16 100% 55% / 0.25);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(16 100% 55% / 0.4);
+  }
+}
+
+.logo-glow {
+  animation: logo-breathing 2s ease-in-out infinite;
+}
+
+.logo-pulse {
+  animation: logo-pulse-bg 2s ease-in-out infinite;
+}
+
+.logo-glow-subtle {
+  animation: logo-glow-subtle-anim 1.5s ease-in-out infinite;
+}
+
+.loading-dot {
+  animation: loading-dot-bounce 1s ease-in-out infinite;
+}

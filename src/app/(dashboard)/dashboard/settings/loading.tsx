@@ -1,5 +1,5 @@
-import { SettingsSkeleton } from "@/components/ui/skeleton-loaders"
+import { LogoLoader } from "@/components/ui/loading-animation"
 
 export default function SettingsLoading() {
-  return <SettingsSkeleton />
+  return <LogoLoader className="h-screen" />
 }

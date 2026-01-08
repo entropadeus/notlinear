@@ -1,5 +1,5 @@
-import { IssueSkeleton } from "@/components/ui/skeleton-loaders"
+import { LogoLoader } from "@/components/ui/loading-animation"
 
 export default function IssueLoading() {
-  return <IssueSkeleton />
+  return <LogoLoader className="h-screen" />
 }

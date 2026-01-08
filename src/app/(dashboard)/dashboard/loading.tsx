@@ -1,5 +1,5 @@
-import { DashboardSkeleton } from "@/components/ui/skeleton-loaders"
+import { LogoLoader } from "@/components/ui/loading-animation"
 
 export default function DashboardLoading() {
-  return <DashboardSkeleton />
+  return <LogoLoader className="h-screen" />
 }

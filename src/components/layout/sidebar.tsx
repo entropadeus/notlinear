@@ -222,13 +222,29 @@ export function Sidebar() {
                       className={cn(
                         "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                         active
-                          ? "nav-active text-foreground"
+                          ? "text-foreground"
                           : "text-muted-foreground hover:text-foreground hover:bg-surface-2",
                         isCollapsed && "justify-center px-0"
                       )}
                     >
+                      {active && (
+                        <motion.div
+                          layoutId="sidebarActive"
+                          className="absolute inset-0 rounded-lg z-0"
+                          style={{
+                            background: "linear-gradient(90deg, hsl(var(--amber-glow)) 0%, transparent 100%)",
+                          }}
+                          transition={{
+                            type: "spring",
+                            bounce: 0.2,
+                            duration: 0.6,
+                          }}
+                        >
+                          {/* Removed red indicator line */}
+                        </motion.div>
+                      )}
                       <Icon className={cn(
-                        "h-[18px] w-[18px] flex-shrink-0 transition-colors",
+                        "h-[18px] w-[18px] flex-shrink-0 transition-colors relative z-10",
                         active ? "text-primary" : "group-hover:text-primary/70"
                       )} />
                       <AnimatePresence mode="wait">
@@ -238,19 +254,13 @@ export function Sidebar() {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -10 }}
                             transition={{ duration: 0.15 }}
-                            className="whitespace-nowrap"
+                            className="whitespace-nowrap relative z-10"
                           >
                             {item.name}
                           </motion.span>
                         )}
                       </AnimatePresence>
-                      {active && !isCollapsed && (
-                        <motion.div
-                          layoutId="activeNav"
-                          className="absolute right-2 h-1.5 w-1.5 rounded-full bg-primary shadow-glow-sm"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                        />
-                      )}
+                      {/* Removed activeNavDot */}
                     </Link>
                   </TooltipTrigger>
                   {isCollapsed && (
