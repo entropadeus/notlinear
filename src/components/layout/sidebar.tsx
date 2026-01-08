@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, FolderKanban, Settings, LogOut, Plus, ChevronLeft, ChevronRight } from "lucide-react"
+import { LayoutDashboard, FolderKanban, Settings, LogOut, Plus, ChevronLeft } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -25,6 +25,25 @@ import { useState, useEffect } from "react"
 import { CreateWorkspaceDialog } from "@/components/workspace/create-workspace-dialog"
 import { motion, AnimatePresence } from "framer-motion"
 
+// Custom click animations for each nav icon (plays when tab becomes active)
+const iconAnimations = {
+  // Dashboard: pulse effect like activity indicator
+  Dashboard: {
+    active: { scale: [1, 1.25, 1], transition: { duration: 0.4, times: [0, 0.4, 1] } },
+    initial: { scale: 1 },
+  },
+  // Projects: shuffle/bounce like organizing cards
+  Projects: {
+    active: { y: [0, -4, 0], rotate: [0, -8, 8, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } },
+    initial: { y: 0, rotate: 0 },
+  },
+  // Settings: gear rotation
+  Settings: {
+    active: { rotate: [0, 180], transition: { type: "spring", stiffness: 200, damping: 12 } },
+    initial: { rotate: 0 },
+  },
+}
+
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
   { name: "Projects", href: "/dashboard/projects", icon: FolderKanban, exact: false },
@@ -33,6 +52,20 @@ const navItems = [
 
 const SIDEBAR_WIDTH = 256
 const SIDEBAR_COLLAPSED_WIDTH = 72
+
+// Fluid spring configurations for different interaction types
+const springConfig = {
+  // Main sidebar collapse - snappy with subtle overshoot
+  sidebar: { stiffness: 400, damping: 35, mass: 0.8 },
+  // Nav item hover - quick and responsive
+  hover: { stiffness: 500, damping: 30, mass: 0.5 },
+  // Active indicator morph - smooth and elegant
+  indicator: { stiffness: 350, damping: 30, mass: 1 },
+  // Text fade - gentle
+  text: { stiffness: 300, damping: 25, mass: 0.6 },
+  // Icon micro-interactions - bouncy
+  icon: { stiffness: 600, damping: 20, mass: 0.3 },
+}
 
 export function Sidebar() {
   const { data: session } = useSession()
@@ -94,27 +127,26 @@ export function Sidebar() {
         }}
         transition={{
           type: "spring",
-          stiffness: 300,
-          damping: 30,
-          mass: 0.8,
+          ...springConfig.sidebar,
         }}
         className="relative flex h-screen flex-col border-r border-border/50 bg-gradient-to-b from-card to-background overflow-hidden"
+        style={{ willChange: "width" }}
       >
         {/* Logo Section */}
-        <div className={cn(
-          "flex h-16 items-center border-b border-border/50 px-4",
-          isCollapsed ? "justify-center" : "justify-between"
-        )}>
+        <div
+          className={cn(
+            "flex h-16 items-center border-b border-border/50 px-4 transition-all duration-200",
+            isCollapsed ? "justify-center" : "justify-between"
+          )}
+        >
           <Tooltip>
             <TooltipTrigger asChild>
-              <motion.button
+              <button
                 onClick={isCollapsed ? toggleCollapse : undefined}
                 className={cn(
-                  "flex items-center gap-3",
-                  isCollapsed && "cursor-pointer"
+                  "flex items-center gap-3 transition-transform duration-200",
+                  isCollapsed && "cursor-pointer hover:scale-105 active:scale-95"
                 )}
-                whileHover={isCollapsed ? { scale: 1.05 } : undefined}
-                whileTap={isCollapsed ? { scale: 0.95 } : undefined}
               >
                 <div className="relative flex-shrink-0">
                   <Image
@@ -122,24 +154,27 @@ export function Sidebar() {
                     alt="NotLinear"
                     width={32}
                     height={32}
-                    className="rounded-lg"
+                    className={cn(
+                      "rounded-lg transition-transform duration-200",
+                      isCollapsed && "scale-110"
+                    )}
                   />
-                  <div className="absolute -inset-1 rounded-lg bg-primary/20 blur-md -z-10" />
+                  <div
+                    className={cn(
+                      "absolute -inset-1 rounded-lg bg-primary/20 blur-md -z-10 transition-all duration-200",
+                      isCollapsed ? "scale-125 opacity-70" : "scale-100 opacity-50"
+                    )}
+                  />
                 </div>
-                <AnimatePresence mode="wait">
-                  {!isCollapsed && (
-                    <motion.span
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      transition={{ duration: 0.15 }}
-                      className="text-lg font-bold tracking-tight whitespace-nowrap"
-                    >
-                      NotLinear
-                    </motion.span>
+                <span
+                  className={cn(
+                    "text-lg font-bold tracking-tight whitespace-nowrap transition-all duration-200 overflow-hidden",
+                    isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
                   )}
-                </AnimatePresence>
-              </motion.button>
+                >
+                  NotLinear
+                </span>
+              </button>
             </TooltipTrigger>
             {isCollapsed && (
               <TooltipContent side="right" sideOffset={10}>
@@ -148,23 +183,16 @@ export function Sidebar() {
             )}
           </Tooltip>
 
-          {/* Collapse Toggle Button - only show when expanded */}
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.15 }}
-                onClick={toggleCollapse}
-                className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-              </motion.button>
+          {/* Collapse Toggle Button */}
+          <button
+            onClick={toggleCollapse}
+            className={cn(
+              "flex h-7 w-7 items-center justify-center rounded-md hover:bg-surface-2 transition-all duration-200",
+              isCollapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100 hover:scale-105 active:scale-95"
             )}
-          </AnimatePresence>
+          >
+            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+          </button>
         </div>
 
         {/* Create Button */}
@@ -179,14 +207,24 @@ export function Sidebar() {
                 )}
                 size="sm"
               >
-                <Plus className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
+                <motion.div
+                  animate={{ rotate: isCollapsed ? 0 : 0 }}
+                  whileHover={{ rotate: 90, scale: 1.1 }}
+                  transition={{ type: "spring", ...springConfig.icon }}
+                >
+                  <Plus className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
+                </motion.div>
                 <AnimatePresence mode="wait">
                   {!isCollapsed && (
                     <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: "auto" }}
-                      exit={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.15 }}
+                      initial={{ opacity: 0, width: 0, filter: "blur(4px)" }}
+                      animate={{ opacity: 1, width: "auto", filter: "blur(0px)" }}
+                      exit={{ opacity: 0, width: 0, filter: "blur(4px)" }}
+                      transition={{
+                        type: "spring",
+                        ...springConfig.text,
+                        width: { type: "spring", ...springConfig.sidebar },
+                      }}
                       className="whitespace-nowrap overflow-hidden"
                     >
                       New Workspace
@@ -209,12 +247,7 @@ export function Sidebar() {
             const Icon = item.icon
             const active = isActive(item)
             return (
-              <motion.div
-                key={item.href}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
+              <div key={item.href}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
@@ -222,45 +255,32 @@ export function Sidebar() {
                       className={cn(
                         "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                         active
-                          ? "text-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-surface-2",
+                          ? "text-foreground bg-gradient-to-r from-[hsl(var(--amber-glow))] to-transparent"
+                          : "text-muted-foreground hover:text-foreground hover:bg-surface-2 hover:translate-x-1",
                         isCollapsed && "justify-center px-0"
                       )}
                     >
-                      {active && (
-                        <motion.div
-                          layoutId="sidebarActive"
-                          className="absolute inset-0 rounded-lg z-0"
-                          style={{
-                            background: "linear-gradient(90deg, hsl(var(--amber-glow)) 0%, transparent 100%)",
-                          }}
-                          transition={{
-                            type: "spring",
-                            bounce: 0.2,
-                            duration: 0.6,
-                          }}
-                        >
-                          {/* Removed red indicator line */}
-                        </motion.div>
-                      )}
-                      <Icon className={cn(
-                        "h-[18px] w-[18px] flex-shrink-0 transition-colors relative z-10",
-                        active ? "text-primary" : "group-hover:text-primary/70"
-                      )} />
-                      <AnimatePresence mode="wait">
-                        {!isCollapsed && (
-                          <motion.span
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            transition={{ duration: 0.15 }}
-                            className="whitespace-nowrap relative z-10"
-                          >
-                            {item.name}
-                          </motion.span>
+                      {/* Icon with custom animation per icon type - animates on click/navigation */}
+                      <motion.div
+                        className="relative z-10 flex-shrink-0"
+                        initial={false}
+                        animate={active ? iconAnimations[item.name as keyof typeof iconAnimations]?.active : iconAnimations[item.name as keyof typeof iconAnimations]?.initial}
+                      >
+                        <Icon className={cn(
+                          "h-[18px] w-[18px] flex-shrink-0",
+                          active ? "text-primary" : "text-current group-hover:text-primary/70 transition-colors duration-200"
+                        )} />
+                      </motion.div>
+
+                      {/* Text - simple CSS transition for collapse */}
+                      <span
+                        className={cn(
+                          "whitespace-nowrap relative z-10 transition-all duration-200",
+                          isCollapsed ? "w-0 opacity-0 overflow-hidden" : "w-auto opacity-100"
                         )}
-                      </AnimatePresence>
-                      {/* Removed activeNavDot */}
+                      >
+                        {item.name}
+                      </span>
                     </Link>
                   </TooltipTrigger>
                   {isCollapsed && (
@@ -269,7 +289,7 @@ export function Sidebar() {
                     </TooltipContent>
                   )}
                 </Tooltip>
-              </motion.div>
+              </div>
             )
           })}
         </nav>
@@ -304,10 +324,13 @@ export function Sidebar() {
                     <AnimatePresence mode="wait">
                       {!isCollapsed && (
                         <motion.div
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -10 }}
-                          transition={{ duration: 0.15 }}
+                          initial={{ opacity: 0, x: -8, filter: "blur(4px)" }}
+                          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                          exit={{ opacity: 0, x: -8, filter: "blur(4px)" }}
+                          transition={{
+                            type: "spring",
+                            ...springConfig.text,
+                          }}
                           className="flex flex-col items-start text-left min-w-0"
                         >
                           <span className="text-sm font-medium truncate max-w-[140px]">
@@ -344,10 +367,14 @@ export function Sidebar() {
         <AnimatePresence>
           {!isCollapsed && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: 8, filter: "blur(4px)" }}
+              transition={{
+                type: "spring",
+                ...springConfig.text,
+                delay: 0.1,
+              }}
               className="px-4 pb-3"
             >
               <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground/50">
