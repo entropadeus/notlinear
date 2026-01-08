@@ -56,14 +56,14 @@ export function WorkspaceStatsCard({ stats }: WorkspaceStatsCardProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card>
+            <Card className="rounded-stat hover:shadow-glow-sm transition-shadow duration-300">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${item.bgColor}`}>
+                  <div className={`p-2 rounded-md ${item.bgColor}`}>
                     <Icon className={`h-5 w-5 ${item.color}`} />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{item.value}</p>
+                    <p className="text-2xl font-bold stat-number">{item.value}</p>
                     <p className="text-xs text-muted-foreground">{item.label}</p>
                   </div>
                 </div>

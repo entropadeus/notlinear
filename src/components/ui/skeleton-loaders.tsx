@@ -21,42 +21,17 @@ function Skeleton({ className }: { className?: string }) {
   )
 }
 
-// Stagger container for children
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.1,
-    },
-  },
-}
-
-const staggerItem = {
-  hidden: { opacity: 0, y: 8 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.4,
-      ease: [0.25, 0.1, 0.25, 1],
-    }
-  },
-}
-
 // Card skeleton with inner content
 function CardSkeleton({ className, children }: { className?: string; children?: React.ReactNode }) {
   return (
-    <motion.div
-      variants={staggerItem}
+    <div
       className={cn(
         "rounded-xl border border-border/50 bg-card p-6 shadow-sm overflow-hidden",
         className
       )}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }
 
@@ -68,12 +43,7 @@ export function DashboardSkeleton() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header - matches Icon + Dashboard + Welcome back */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mb-10"
-      >
+      <div className="mb-10">
         <div className="flex items-center gap-4 mb-2">
           <Skeleton className="h-10 w-10 rounded-xl" />
           <div className="space-y-2">
@@ -81,23 +51,13 @@ export function DashboardSkeleton() {
             <Skeleton className="h-5 w-48" />
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Quick Stats Grid - 4 stat cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-        className="mb-10"
-      >
+      <div className="mb-10">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.05 }}
-            >
+            <div key={i}>
               <CardSkeleton className="pt-5 pb-5">
                 <div className="flex items-center gap-4">
                   <Skeleton className="h-11 w-11 rounded-xl" />
@@ -107,17 +67,12 @@ export function DashboardSkeleton() {
                   </div>
                 </div>
               </CardSkeleton>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Overall Progress Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="mt-5"
-        >
+        <div className="mt-5">
           <CardSkeleton className="py-5">
             <div className="flex items-center gap-5">
               <Skeleton className="h-11 w-11 rounded-xl" />
@@ -130,29 +85,19 @@ export function DashboardSkeleton() {
               </div>
             </div>
           </CardSkeleton>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       {/* Workspaces Section Header */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.25 }}
-        className="mb-5"
-      >
+      <div className="mb-5">
         <Skeleton className="h-5 w-32 mb-2" />
         <Skeleton className="h-4 w-24 ml-4" />
-      </motion.div>
+      </div>
 
       {/* Workspaces Grid - matches workspace cards */}
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-        className="grid gap-5 md:grid-cols-2 lg:grid-cols-3"
-      >
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {[...Array(3)].map((_, i) => (
-          <motion.div key={i} variants={staggerItem}>
+          <div key={i}>
             <CardSkeleton className="h-full">
               <div className="space-y-4">
                 {/* Card Header */}
@@ -184,9 +129,9 @@ export function DashboardSkeleton() {
                 </div>
               </div>
             </CardSkeleton>
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
     </div>
   )
 }
@@ -195,12 +140,7 @@ export function ProjectsSkeleton() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header - Icon + Projects + subtitle */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mb-8"
-      >
+      <div className="mb-8">
         <div className="flex items-center gap-4 mb-2">
           <Skeleton className="h-12 w-12 rounded-xl" />
           <div className="space-y-2">
@@ -208,23 +148,13 @@ export function ProjectsSkeleton() {
             <Skeleton className="h-5 w-52" />
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Stats Overview - 4 cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-        className="mb-8"
-      >
+      <div className="mb-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.05 }}
-            >
+            <div key={i}>
               <CardSkeleton className="pt-5 pb-5">
                 <div className="flex items-center gap-4">
                   <Skeleton className="h-11 w-11 rounded-xl" />
@@ -234,17 +164,12 @@ export function ProjectsSkeleton() {
                   </div>
                 </div>
               </CardSkeleton>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         {/* Progress bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="mt-5"
-        >
+        <div className="mt-5">
           <CardSkeleton className="py-5">
             <div className="flex items-center gap-5">
               <Skeleton className="h-11 w-11 rounded-xl" />
@@ -257,27 +182,17 @@ export function ProjectsSkeleton() {
               </div>
             </div>
           </CardSkeleton>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       {/* Search & View Controls */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="flex items-center gap-4 mb-6"
-      >
+      <div className="flex items-center gap-4 mb-6">
         <Skeleton className="h-10 flex-1 max-w-md rounded-lg" />
         <Skeleton className="h-10 w-20 rounded-lg" />
-      </motion.div>
+      </div>
 
       {/* Workspace Group */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25 }}
-        className="space-y-10"
-      >
+      <div className="space-y-10">
         {/* Workspace Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -293,12 +208,7 @@ export function ProjectsSkeleton() {
         {/* Project Cards Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + i * 0.05 }}
-            >
+            <div key={i}>
               <CardSkeleton>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -322,10 +232,10 @@ export function ProjectsSkeleton() {
                   </div>
                 </div>
               </CardSkeleton>
-            </motion.div>
+            </div>
           ))}
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
@@ -334,12 +244,7 @@ export function SettingsSkeleton() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       {/* Header - Icon + Settings */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mb-8"
-      >
+      <div className="mb-8">
         <div className="flex items-center gap-4 mb-2">
           <Skeleton className="h-12 w-12 rounded-xl" />
           <div className="space-y-2">
@@ -347,15 +252,11 @@ export function SettingsSkeleton() {
             <Skeleton className="h-5 w-52" />
           </div>
         </div>
-      </motion.div>
+      </div>
 
       <div className="space-y-8">
         {/* Profile Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
+        <div>
           <CardSkeleton>
             {/* Section header */}
             <div className="flex items-center gap-3 mb-6">
@@ -393,14 +294,10 @@ export function SettingsSkeleton() {
               <Skeleton className="h-3 w-72" />
             </div>
           </CardSkeleton>
-        </motion.div>
+        </div>
 
         {/* Appearance Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-        >
+        <div>
           <CardSkeleton>
             {/* Section header */}
             <div className="flex items-center gap-3 mb-6">
@@ -421,14 +318,10 @@ export function SettingsSkeleton() {
               </div>
             </div>
           </CardSkeleton>
-        </motion.div>
+        </div>
 
         {/* Notifications Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
+        <div>
           <CardSkeleton>
             {/* Section header */}
             <div className="flex items-center gap-3 mb-6">
@@ -453,14 +346,10 @@ export function SettingsSkeleton() {
               </div>
             ))}
           </CardSkeleton>
-        </motion.div>
+        </div>
 
         {/* Danger Zone */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-        >
+        <div>
           <CardSkeleton className="border-destructive/30">
             {/* Section header */}
             <div className="flex items-center gap-3 mb-6">
@@ -480,7 +369,7 @@ export function SettingsSkeleton() {
               <Skeleton className="h-9 w-32 rounded-lg" />
             </div>
           </CardSkeleton>
-        </motion.div>
+        </div>
       </div>
     </div>
   )
@@ -490,12 +379,7 @@ export function WorkspaceSkeleton() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header - back button + icon + title + buttons */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mb-8 flex items-center justify-between"
-      >
+      <div className="mb-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-10 rounded-xl" />
           <div className="flex items-center gap-4">
@@ -510,15 +394,10 @@ export function WorkspaceSkeleton() {
           <Skeleton className="h-10 w-28 rounded-lg" />
           <Skeleton className="h-10 w-10 rounded-xl" />
         </div>
-      </motion.div>
+      </div>
 
       {/* Workspace Stats Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-        className="mb-8"
-      >
+      <div className="mb-8">
         <CardSkeleton>
           {/* Progress bar */}
           <div className="space-y-3 mb-6">
@@ -536,28 +415,18 @@ export function WorkspaceSkeleton() {
             ))}
           </div>
         </CardSkeleton>
-      </motion.div>
+      </div>
 
       {/* Projects Header */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="mb-5"
-      >
+      <div className="mb-5">
         <Skeleton className="h-5 w-20 mb-2" />
         <Skeleton className="h-4 w-24 ml-4" />
-      </motion.div>
+      </div>
 
       {/* Projects Grid */}
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-        className="grid gap-5 md:grid-cols-2 lg:grid-cols-3"
-      >
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {[...Array(3)].map((_, i) => (
-          <motion.div key={i} variants={staggerItem}>
+          <div key={i}>
             <CardSkeleton className="h-full">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -579,9 +448,9 @@ export function WorkspaceSkeleton() {
                 </div>
               </div>
             </CardSkeleton>
-          </motion.div>
+          </div>
         ))}
-      </motion.div>
+      </div>
     </div>
   )
 }
@@ -591,12 +460,7 @@ export function ProjectSkeleton() {
     <div className="flex h-screen">
       <div className="flex-1 overflow-auto p-8 max-w-7xl mx-auto">
         {/* Header - back + icon + title + 3 buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-8 flex items-center justify-between"
-        >
+        <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Skeleton className="h-10 w-10 rounded-xl" />
             <div className="flex items-center gap-4">
@@ -612,15 +476,10 @@ export function ProjectSkeleton() {
             <Skeleton className="h-10 w-24 rounded-lg" />
             <Skeleton className="h-10 w-10 rounded-xl" />
           </div>
-        </motion.div>
+        </div>
 
         {/* Project Stats Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-          className="mb-8"
-        >
+        <div className="mb-8">
           <CardSkeleton className="pt-6">
             {/* Progress bar */}
             <div className="space-y-3 mb-6">
@@ -642,31 +501,18 @@ export function ProjectSkeleton() {
               ))}
             </div>
           </CardSkeleton>
-        </motion.div>
+        </div>
 
         {/* Issues Header */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="mb-5"
-        >
+        <div className="mb-5">
           <Skeleton className="h-5 w-16 mb-2" />
           <Skeleton className="h-4 w-20 ml-4" />
-        </motion.div>
+        </div>
 
         {/* Issues List - matches IssueList component */}
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="show"
-          className="space-y-2"
-        >
+        <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              variants={staggerItem}
-            >
+            <div key={i}>
               <CardSkeleton className="p-4">
                 <div className="flex items-center gap-4">
                   {/* Status icon */}
@@ -689,9 +535,9 @@ export function ProjectSkeleton() {
                   </div>
                 </div>
               </CardSkeleton>
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </div>
   )
@@ -701,12 +547,7 @@ export function IssueSkeleton() {
   return (
     <div className="flex h-screen">
       <div className="flex-1 overflow-auto p-8">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mx-auto max-w-4xl space-y-6"
-        >
+        <div className="mx-auto max-w-4xl space-y-6">
           {/* Header - back + title + identifier */}
           <div className="flex items-center gap-4">
             <Skeleton className="h-10 w-10 rounded-lg" />
@@ -817,7 +658,7 @@ export function IssueSkeleton() {
               </CardSkeleton>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   )

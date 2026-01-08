@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,63 +5,68 @@
 @layer base {
   :root {
     /* NotLinear - Light Mode */
-    --background: 20 20% 98%;
+    --background: 20 20% 99%; /* Slightly lighter */
     --foreground: 20 10% 10%;
-    --card: 20 15% 96%;
+    --card: 0 0% 100%;
     --card-foreground: 20 10% 10%;
-    --popover: 20 20% 98%;
+    --popover: 0 0% 100%;
     --popover-foreground: 20 10% 10%;
     --primary: 16 100% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 16 20% 92%;
+    --secondary: 20 10% 94%;
     --secondary-foreground: 20 10% 20%;
-    --muted: 16 15% 92%;
+    --muted: 20 10% 94%;
     --muted-foreground: 20 10% 45%;
     --accent: 16 100% 50%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 16 15% 88%;
-    --input: 16 15% 88%;
+    --border: 20 10% 90%;
+    --input: 20 10% 90%;
     --ring: 16 100% 50%;
-    --radius: 0.625rem;
+    
+    /* User specified radius preferences */
+    --radius-button: 30px;
+    --radius-card: 24px;
+    --radius-stat: 16px;
+    --radius: 0.625rem; /* Base radius for other elements */
 
     /* Custom accent colors */
     --amber: 16 100% 50%;
     --amber-glow: 16 100% 50% / 0.15;
-    --surface-1: 20 15% 96%;
-    --surface-2: 20 12% 93%;
-    --surface-3: 20 10% 90%;
+    --surface-1: 0 0% 100%;
+    --surface-2: 20 10% 96%;
+    --surface-3: 20 10% 93%;
   }
 
   .dark {
-    /* NotLinear - Dark Mode */
-    --background: 220 20% 6%;
-    --foreground: 16 20% 92%;
-    --card: 220 18% 8%;
-    --card-foreground: 16 20% 92%;
-    --popover: 220 20% 7%;
-    --popover-foreground: 16 20% 92%;
-    --primary: 16 100% 55%;
+    /* NotLinear - Dark Mode - Deeper, Richer Void */
+    --background: 240 10% 4%; /* Deep void black/blue */
+    --foreground: 0 0% 98%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 16 90% 55%; /* Slightly desaturated for dark mode legibility */
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 15% 12%;
-    --secondary-foreground: 16 20% 85%;
-    --muted: 220 15% 12%;
-    --muted-foreground: 220 10% 55%;
-    --accent: 16 100% 55%;
+    --secondary: 240 6% 12%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 6% 12%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 16 90% 55%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 15% 14%;
-    --input: 220 15% 14%;
-    --ring: 16 100% 55%;
+    --border: 240 6% 14%;
+    --input: 240 6% 14%;
+    --ring: 16 90% 55%;
 
     /* Custom accent colors */
-    --amber: 16 100% 55%;
-    --amber-glow: 16 100% 55% / 0.12;
-    --surface-1: 220 18% 9%;
-    --surface-2: 220 16% 11%;
-    --surface-3: 220 14% 13%;
+    --amber: 16 90% 55%;
+    --amber-glow: 16 90% 55% / 0.15;
+    --surface-1: 240 10% 7%;
+    --surface-2: 240 10% 9%;
+    --surface-3: 240 10% 11%;
   }
 }
 

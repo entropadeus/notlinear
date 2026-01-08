@@ -19,9 +19,9 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-heading)', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
-        display: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -71,6 +71,9 @@ const config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        button: "var(--radius-button)",
+        card: "var(--radius-card)",
+        stat: "var(--radius-stat)",
       },
       boxShadow: {
         'glow': '0 0 20px hsl(var(--amber-glow))',
@@ -128,5 +131,7 @@ const config = {
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config
+
+export default config
 
 export default config

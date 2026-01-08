@@ -2,22 +2,25 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { motion } from "framer-motion"
-import { Github } from "lucide-react"
+import { Github, ArrowRight, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const returnUrl = searchParams.get("returnUrl") || "/dashboard"
   const { toast } = useToast()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isGitHubLoading, setIsGitHubLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,7 +40,7 @@ export default function LoginPage() {
           variant: "destructive",
         })
       } else {
-        router.push("/dashboard")
+        router.push(returnUrl)
         router.refresh()
       }
     } catch (error) {
@@ -52,83 +55,211 @@ export default function LoginPage() {
   }
 
   const handleGitHubSignIn = async () => {
-    setIsLoading(true)
-    await signIn("github", { callbackUrl: "/dashboard" })
+    setIsGitHubLoading(true)
+    await signIn("github", { callbackUrl: returnUrl })
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-            <CardDescription>
-              Sign in to your account to continue
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">
+      {/* Ambient background effects */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Primary glow */}
+        <div
+          className="absolute -left-1/4 top-0 h-[600px] w-[600px] rounded-full opacity-[0.03]"
+          style={{
+            background: "radial-gradient(circle, hsl(16 100% 50%) 0%, transparent 70%)",
+          }}
+        />
+        <div
+          className="absolute -right-1/4 bottom-0 h-[500px] w-[500px] rounded-full opacity-[0.03]"
+          style={{
+            background: "radial-gradient(circle, hsl(16 100% 50%) 0%, transparent 70%)",
+          }}
+        />
+        {/* Grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
+                              linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`,
+            backgroundSize: "64px 64px",
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 flex w-full max-w-[420px] flex-col items-center">
+        {/* Logo and branding */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-10 flex flex-col items-center"
+        >
+          <motion.div
+            animate={{ y: [0, -6, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="relative"
+          >
+            {/* Logo glow */}
+            <div
+              className="absolute inset-0 blur-2xl opacity-40"
+              style={{ background: "hsl(16 100% 50%)" }}
+            />
+            <Image
+              src="/notlinear-icon.png"
+              alt="NotLinear"
+              width={72}
+              height={72}
+              className="relative rounded-2xl"
+              priority
+            />
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="mt-5 text-2xl font-semibold tracking-tight"
+          >
+            NotLinear
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="mt-1 text-sm text-muted-foreground"
+          >
+            Sign in to continue
+          </motion.p>
+        </motion.div>
+
+        {/* Login form card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full"
+        >
+          <div className="rounded-card border border-border/50 bg-card/80 p-8 shadow-card backdrop-blur-xl">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
+                className="space-y-2"
+              >
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="name@example.com"
+                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="h-11 rounded-xl border-border/50 bg-background/50 px-4 transition-all focus:border-primary/50 focus:bg-background"
                   required
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.35, duration: 0.4 }}
+                className="space-y-2"
+              >
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="h-11 rounded-xl border-border/50 bg-background/50 px-4 transition-all focus:border-primary/50 focus:bg-background"
                   required
                 />
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign in"}
-              </Button>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.4 }}
+              >
+                <Button
+                  type="submit"
+                  className="btn-premium h-11 w-full rounded-xl text-sm font-medium"
+                  disabled={isLoading || isGitHubLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      Sign in
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </motion.div>
             </form>
-            <div className="relative">
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.45, duration: 0.4 }}
+              className="relative my-6"
+            >
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+                <div className="w-full border-t border-border/50" />
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
+              <div className="relative flex justify-center">
+                <span className="bg-card px-3 text-xs uppercase tracking-wider text-muted-foreground">
+                  or
                 </span>
               </div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleGitHubSignIn}
-              disabled={isLoading}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
             >
-              <Github className="mr-2 h-4 w-4" />
-              GitHub
-            </Button>
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <p className="text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link href="/register" className="text-primary hover:underline">
-                Sign up
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
-      </motion.div>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 w-full rounded-xl border-border/50 bg-transparent text-sm font-medium transition-all hover:border-border hover:bg-muted/50"
+                onClick={handleGitHubSignIn}
+                disabled={isLoading || isGitHubLoading}
+              >
+                {isGitHubLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Github className="mr-2 h-4 w-4" />
+                )}
+                Continue with GitHub
+              </Button>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Footer */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="mt-8 text-center text-sm text-muted-foreground"
+        >
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/register"
+            className="font-medium text-primary transition-colors hover:text-primary/80"
+          >
+            Create one
+          </Link>
+        </motion.p>
+      </div>
     </div>
   )
 }
