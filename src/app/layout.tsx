@@ -1,23 +1,8 @@
 import type { Metadata } from "next"
-import { Bricolage_Grotesque, Manrope } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
 import { SessionProvider } from "@/components/providers/session-provider"
 import { ThemeProvider } from "@/components/providers/theme-provider"
-
-const bricolage = Bricolage_Grotesque({ 
-  subsets: ["latin"],
-  variable: "--font-heading",
-  display: "swap",
-  preload: true,
-})
-
-const manrope = Manrope({ 
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-  preload: true,
-})
 
 export const metadata: Metadata = {
   title: "NotLinear - Task Management",
@@ -31,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${manrope.variable} ${bricolage.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <div className="noise-overlay" />
         <ThemeProvider
           attribute="class"
