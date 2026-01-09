@@ -6,7 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { formatRelativeTime, cn } from "@/lib/utils"
-import { Circle, CheckCircle2, Clock, Archive, XCircle, Loader2, ListTodo, ArrowRight } from "lucide-react"
+import { Circle, CheckCircle2, Clock, Archive, XCircle, Loader2, ListTodo, ArrowRight, type LucideIcon } from "lucide-react"
+import { STATUS_DISPLAY_CONFIG, PRIORITY_DISPLAY_CONFIG, type IssueStatus, type IssuePriority } from "@/lib/filters/types"
 
 interface Member {
   id: string
@@ -21,21 +22,14 @@ interface IssueListProps {
   members?: Member[]
 }
 
-const statusConfig = {
-  backlog: { icon: Archive, color: "text-slate-400", bg: "bg-slate-500/10" },
-  todo: { icon: Circle, color: "text-blue-400", bg: "bg-blue-500/10" },
-  in_progress: { icon: Loader2, color: "text-orange-400", bg: "bg-orange-500/10" },
-  in_review: { icon: Clock, color: "text-violet-400", bg: "bg-violet-500/10" },
-  done: { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-  cancelled: { icon: XCircle, color: "text-red-400", bg: "bg-red-500/10" },
-}
-
-const priorityConfig = {
-  urgent: { label: "Urgent", color: "text-red-400 bg-red-500/10" },
-  high: { label: "High", color: "text-orange-400 bg-orange-500/10" },
-  medium: { label: "Medium", color: "text-orange-400 bg-orange-500/10" },
-  low: { label: "Low", color: "text-slate-400 bg-slate-500/10" },
-  no_priority: { label: "", color: "" },
+// Map status to icon - icons cannot be serialized in types.ts
+const STATUS_ICONS: Record<IssueStatus, LucideIcon> = {
+  backlog: Archive,
+  todo: Circle,
+  in_progress: Loader2,
+  in_review: Clock,
+  done: CheckCircle2,
+  cancelled: XCircle,
 }
 
 export function IssueList({ issues, workspaceSlug, members = [] }: IssueListProps) {
@@ -47,9 +41,11 @@ export function IssueList({ issues, workspaceSlug, members = [] }: IssueListProp
   return (
     <div className="space-y-2">
       {issues.map((issue, index) => {
-        const status = statusConfig[issue.status as keyof typeof statusConfig] || statusConfig.backlog
-        const StatusIcon = status.icon
-        const priority = priorityConfig[issue.priority as keyof typeof priorityConfig] || priorityConfig.no_priority
+        const statusKey = (issue.status as IssueStatus) || "backlog"
+        const statusConfig = STATUS_DISPLAY_CONFIG[statusKey] || STATUS_DISPLAY_CONFIG.backlog
+        const StatusIcon = STATUS_ICONS[statusKey] || STATUS_ICONS.backlog
+        const priorityKey = (issue.priority as IssuePriority | "no_priority") || "no_priority"
+        const priorityConfig = PRIORITY_DISPLAY_CONFIG[priorityKey] || PRIORITY_DISPLAY_CONFIG.no_priority
         const assignee = getAssignee(issue.assigneeId)
 
         return (
@@ -62,8 +58,8 @@ export function IssueList({ issues, workspaceSlug, members = [] }: IssueListProp
             <Link href={`/w/${workspaceSlug}/issue/${issue.identifier}`}>
               <Card className="group transition-all border-border/50 hover:border-border hover:shadow-card-hover cursor-pointer overflow-hidden">
                 <CardContent className="flex items-center gap-4 p-4">
-                  <div className={cn("p-2 rounded-lg", status.bg)}>
-                    <StatusIcon className={cn("h-4 w-4", status.color)} />
+                  <div className={cn("p-2 rounded-lg", statusConfig.bgClass)}>
+                    <StatusIcon className={cn("h-4 w-4", statusConfig.color)} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -77,9 +73,9 @@ export function IssueList({ issues, workspaceSlug, members = [] }: IssueListProp
                     )}
                   </div>
                   <div className="flex items-center gap-3">
-                    {priority.label && (
-                      <span className={cn("text-xs px-2 py-1 rounded-full font-medium", priority.color)}>
-                        {priority.label}
+                    {priorityConfig.label && (
+                      <span className={cn("text-xs px-2 py-1 rounded-full font-medium", priorityConfig.colorClass)}>
+                        {priorityConfig.label}
                       </span>
                     )}
                     {assignee && (

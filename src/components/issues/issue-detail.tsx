@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { motion } from "framer-motion"
 import { formatRelativeTime } from "@/lib/utils"
-import { Circle, CheckCircle2, ArrowLeft, UserCircle } from "lucide-react"
+import { ArrowLeft, UserCircle } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { updateIssue } from "@/lib/actions/issues"
@@ -17,6 +17,7 @@ import ReactMarkdown from "react-markdown"
 import { CommentSection } from "./comment-section"
 import { RevisionTimeline } from "./revision-timeline"
 import { type Revision } from "@/lib/actions/revisions"
+import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "@/lib/filters/types"
 
 interface Comment {
   id: string
@@ -45,23 +46,6 @@ interface IssueDetailProps {
   members?: Member[]
 }
 
-const statusOptions = [
-  { value: "backlog", label: "Backlog" },
-  { value: "todo", label: "Todo" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "in_review", label: "In Review" },
-  { value: "done", label: "Done" },
-  { value: "cancelled", label: "Cancelled" },
-]
-
-const priorityOptions = [
-  { value: "none", label: "None" },
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-  { value: "urgent", label: "Urgent" },
-]
-
 export function IssueDetail({ issue, workspaceSlug, initialComments = [], initialRevisions = [], members = [] }: IssueDetailProps) {
   const { toast } = useToast()
   const router = useRouter()
@@ -72,56 +56,36 @@ export function IssueDetail({ issue, workspaceSlug, initialComments = [], initia
 
   const currentAssignee = assigneeId !== "unassigned" ? members.find(m => m.id === assigneeId) : null
 
-  const handleStatusChange = async (newStatus: string) => {
+  // Generic field update handler to reduce repetition
+  async function handleFieldUpdate<T extends string>(
+    field: "status" | "priority" | "assigneeId",
+    newValue: T,
+    setter: (value: T) => void,
+    errorMessage: string
+  ): Promise<void> {
     setIsUpdating(true)
     try {
-      await updateIssue(issue.id, { status: newStatus })
-      setStatus(newStatus)
+      const updateData = field === "assigneeId"
+        ? { assigneeId: newValue === "unassigned" ? null : newValue }
+        : { [field]: newValue }
+      await updateIssue(issue.id, updateData)
+      setter(newValue)
       router.refresh()
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update status",
-        variant: "destructive",
-      })
+    } catch {
+      toast({ title: "Error", description: errorMessage, variant: "destructive" })
     } finally {
       setIsUpdating(false)
     }
   }
 
-  const handlePriorityChange = async (newPriority: string) => {
-    setIsUpdating(true)
-    try {
-      await updateIssue(issue.id, { priority: newPriority })
-      setPriority(newPriority)
-      router.refresh()
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update priority",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdating(false)
-    }
-  }
+  const handleStatusChange = (newStatus: string) =>
+    handleFieldUpdate("status", newStatus, setStatus, "Failed to update status")
 
-  const handleAssigneeChange = async (newAssigneeId: string) => {
-    setIsUpdating(true)
-    try {
-      await updateIssue(issue.id, { assigneeId: newAssigneeId === "unassigned" ? null : newAssigneeId })
-      setAssigneeId(newAssigneeId)
-      router.refresh()
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update assignee",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdating(false)
-    }
-  }
+  const handlePriorityChange = (newPriority: string) =>
+    handleFieldUpdate("priority", newPriority, setPriority, "Failed to update priority")
+
+  const handleAssigneeChange = (newAssigneeId: string) =>
+    handleFieldUpdate("assigneeId", newAssigneeId, setAssigneeId, "Failed to update assignee")
 
   return (
     <motion.div
@@ -182,7 +146,7 @@ export function IssueDetail({ issue, workspaceSlug, initialComments = [], initia
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {statusOptions.map((option) => (
+                    {STATUS_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -198,7 +162,7 @@ export function IssueDetail({ issue, workspaceSlug, initialComments = [], initia
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {priorityOptions.map((option) => (
+                    {PRIORITY_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>

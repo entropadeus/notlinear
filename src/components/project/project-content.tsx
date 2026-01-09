@@ -83,15 +83,13 @@ export function ProjectContent({ project, issues, workspaceSlug, projectId, work
               </Button>
             </Link>
             <div className="flex items-center gap-4">
-              {project.icon ? (
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center">
+                {project.icon ? (
                   <span className="text-2xl">{project.icon}</span>
-                </div>
-              ) : (
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center">
+                ) : (
                   <ListTodo className="h-6 w-6 text-primary" />
-                </div>
-              )}
+                )}
+              </div>
               <div>
                 <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
                 <p className="text-muted-foreground">{project.description || "No description"}</p>

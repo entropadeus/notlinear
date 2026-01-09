@@ -1,13 +1,27 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { issues, projects, workspaces, workspaceMembers, projects as projectsTable, issueRevisions } from "@/lib/db/schema"
+import { issues, projects, workspaces, workspaceMembers, issueRevisions } from "@/lib/db/schema"
 import { eq, and, desc, asc } from "drizzle-orm"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { createIssueEvent } from "@/lib/realtime/events"
 import { sql } from "drizzle-orm"
+
+// Helper to compute completedAt based on status transition
+function getCompletedAtUpdate(
+  oldStatus: string,
+  newStatus: string
+): { completedAt: Date | null } | null {
+  if (newStatus === "done" && oldStatus !== "done") {
+    return { completedAt: new Date() }
+  }
+  if (newStatus !== "done" && oldStatus === "done") {
+    return { completedAt: null }
+  }
+  return null
+}
 
 export async function createIssue(
   projectId: string,
@@ -26,8 +40,8 @@ export async function createIssue(
   // Get project and verify access
   const [project] = await db
     .select()
-    .from(projectsTable)
-    .where(eq(projectsTable.id, projectId))
+    .from(projects)
+    .where(eq(projects.id, projectId))
     .limit(1)
 
   if (!project) {
@@ -57,9 +71,9 @@ export async function createIssue(
 
   // Update project counter
   await db
-    .update(projectsTable)
+    .update(projects)
     .set({ issueCounter: issueNumber })
-    .where(eq(projectsTable.id, projectId))
+    .where(eq(projects.id, projectId))
 
   const [issue] = await db
     .insert(issues)
@@ -221,15 +235,14 @@ export async function updateIssue(
     changes.push({ field: "assignee", oldValue: issue.assigneeId, newValue: data.assigneeId })
   }
 
+  const completedAtUpdate = data.status
+    ? getCompletedAtUpdate(issue.status, data.status)
+    : null
+
   const updateData: any = {
     ...data,
+    ...completedAtUpdate,
     updatedAt: new Date(),
-  }
-
-  if (data.status === "done" && issue.status !== "done") {
-    updateData.completedAt = new Date()
-  } else if (data.status !== "done" && issue.status === "done") {
-    updateData.completedAt = null
   }
 
   const [updated] = await db
@@ -360,17 +373,12 @@ export async function updateIssuePosition(
   const finalPosition = insertedActive ? newPosition : position
 
   // Update the dragged issue
+  const completedAtUpdate = getCompletedAtUpdate(issue.status, newStatus)
   const updateData: any = {
     status: newStatus,
     position: finalPosition,
+    ...completedAtUpdate,
     updatedAt: new Date(),
-  }
-
-  // Handle completedAt for done status
-  if (newStatus === "done" && issue.status !== "done") {
-    updateData.completedAt = new Date()
-  } else if (newStatus !== "done" && issue.status === "done") {
-    updateData.completedAt = null
   }
 
   // Update the main issue

@@ -50,7 +50,7 @@ export interface SavedView {
 }
 
 // Quick filter presets
-export const QUICK_FILTERS = {
+export const QUICK_FILTERS: Record<string, { name: string; icon: string; filters: IssueFilters }> = {
   myIssues: {
     name: "My Issues",
     icon: "👤",
@@ -76,7 +76,7 @@ export const QUICK_FILTERS = {
     icon: "✅",
     filters: { status: ["done"] },
   },
-} as const
+}
 
 export type QuickFilterKey = keyof typeof QUICK_FILTERS
 
@@ -90,6 +90,34 @@ export const STATUS_CONFIG: Record<IssueStatus, { label: string; color: string }
   cancelled: { label: "Cancelled", color: "red" },
 }
 
+// Extended status config for components that need icons and backgrounds
+// Icon classes: Archive, Circle, Loader2, Clock, CheckCircle2, XCircle from lucide-react
+export const STATUS_DISPLAY_CONFIG: Record<IssueStatus, {
+  label: string
+  color: string
+  bgClass: string
+}> = {
+  backlog: { label: "Backlog", color: "text-slate-400", bgClass: "bg-slate-500/10" },
+  todo: { label: "Todo", color: "text-blue-400", bgClass: "bg-blue-500/10" },
+  in_progress: { label: "In Progress", color: "text-orange-400", bgClass: "bg-orange-500/10" },
+  in_review: { label: "In Review", color: "text-violet-400", bgClass: "bg-violet-500/10" },
+  done: { label: "Done", color: "text-emerald-400", bgClass: "bg-emerald-500/10" },
+  cancelled: { label: "Cancelled", color: "text-red-400", bgClass: "bg-red-500/10" },
+}
+
+// Extended priority config for components that need styling
+export const PRIORITY_DISPLAY_CONFIG: Record<IssuePriority | "no_priority", {
+  label: string
+  colorClass: string
+}> = {
+  urgent: { label: "Urgent", colorClass: "text-red-400 bg-red-500/10" },
+  high: { label: "High", colorClass: "text-orange-400 bg-orange-500/10" },
+  medium: { label: "Medium", colorClass: "text-orange-400 bg-orange-500/10" },
+  low: { label: "Low", colorClass: "text-slate-400 bg-slate-500/10" },
+  none: { label: "", colorClass: "" },
+  no_priority: { label: "", colorClass: "" },
+}
+
 // Priority display config
 export const PRIORITY_CONFIG: Record<IssuePriority, { label: string; color: string }> = {
   urgent: { label: "Urgent", color: "red" },
@@ -98,6 +126,18 @@ export const PRIORITY_CONFIG: Record<IssuePriority, { label: string; color: stri
   low: { label: "Low", color: "slate" },
   none: { label: "No Priority", color: "gray" },
 }
+
+// Derived options for select dropdowns (status)
+export const STATUS_OPTIONS = ISSUE_STATUSES.map((status) => ({
+  value: status,
+  label: STATUS_CONFIG[status].label,
+}))
+
+// Derived options for select dropdowns (priority)
+export const PRIORITY_OPTIONS = ISSUE_PRIORITIES.map((priority) => ({
+  value: priority,
+  label: PRIORITY_CONFIG[priority].label,
+}))
 
 // Check if filters are empty (no active filters)
 export function isFiltersEmpty(filters: IssueFilters): boolean {

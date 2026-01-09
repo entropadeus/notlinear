@@ -24,7 +24,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
 import { createIssue } from "@/lib/actions/issues"
-import { User, UserCircle } from "lucide-react"
+import { STATUS_OPTIONS, PRIORITY_OPTIONS } from "@/lib/filters/types"
+import { UserCircle } from "lucide-react"
 
 interface Member {
   id: string
@@ -39,22 +40,6 @@ interface CreateIssueDialogProps {
   projectId: string
   members?: Member[]
 }
-
-const statusOptions = [
-  { value: "backlog", label: "Backlog" },
-  { value: "todo", label: "Todo" },
-  { value: "in_progress", label: "In Progress" },
-  { value: "in_review", label: "In Review" },
-  { value: "done", label: "Done" },
-]
-
-const priorityOptions = [
-  { value: "none", label: "None" },
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-  { value: "urgent", label: "Urgent" },
-]
 
 export function CreateIssueDialog({ open, onOpenChange, projectId, members = [] }: CreateIssueDialogProps) {
   const router = useRouter()
@@ -145,7 +130,7 @@ export function CreateIssueDialog({ open, onOpenChange, projectId, members = [] 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {statusOptions.map((option) => (
+                    {STATUS_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -160,7 +145,7 @@ export function CreateIssueDialog({ open, onOpenChange, projectId, members = [] 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {priorityOptions.map((option) => (
+                    {PRIORITY_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>

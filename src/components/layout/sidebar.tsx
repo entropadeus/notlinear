@@ -223,7 +223,7 @@ export function Sidebar({ session }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 px-3">
-          {navItems.map((item, index) => {
+          {navItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item)
             return (

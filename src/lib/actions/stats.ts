@@ -17,6 +17,16 @@ export interface ProjectStats {
   cancelled: number
 }
 
+// Map database status values to ProjectStats/StatusDistribution keys
+const STATUS_KEY_MAP: Record<string, "backlog" | "todo" | "inProgress" | "inReview" | "done" | "cancelled"> = {
+  backlog: "backlog",
+  todo: "todo",
+  in_progress: "inProgress",
+  in_review: "inReview",
+  done: "done",
+  cancelled: "cancelled",
+}
+
 export interface WorkspaceStats {
   workspaceId: string
   totalProjects: number
@@ -56,25 +66,9 @@ export async function getProjectStats(projectId: string): Promise<ProjectStats |
   // Aggregate counts by status
   for (const row of statsResult) {
     stats.totalIssues += row.count
-    switch (row.status) {
-      case "backlog":
-        stats.backlog = row.count
-        break
-      case "todo":
-        stats.todo = row.count
-        break
-      case "in_progress":
-        stats.inProgress = row.count
-        break
-      case "in_review":
-        stats.inReview = row.count
-        break
-      case "done":
-        stats.done = row.count
-        break
-      case "cancelled":
-        stats.cancelled = row.count
-        break
+    const key = STATUS_KEY_MAP[row.status]
+    if (key) {
+      stats[key] = row.count
     }
   }
 
@@ -191,25 +185,9 @@ export async function getAllProjectsStats(workspaceId: string): Promise<Map<stri
     if (!stats) continue
 
     stats.totalIssues += row.count
-    switch (row.status) {
-      case "backlog":
-        stats.backlog = row.count
-        break
-      case "todo":
-        stats.todo = row.count
-        break
-      case "in_progress":
-        stats.inProgress = row.count
-        break
-      case "in_review":
-        stats.inReview = row.count
-        break
-      case "done":
-        stats.done = row.count
-        break
-      case "cancelled":
-        stats.cancelled = row.count
-        break
+    const key = STATUS_KEY_MAP[row.status]
+    if (key) {
+      stats[key] = row.count
     }
   }
 
@@ -292,25 +270,9 @@ export async function getStatusDistribution(): Promise<StatusDistribution> {
   // Aggregate counts by status
   for (const row of statusStats) {
     distribution.total += row.count
-    switch (row.status) {
-      case "backlog":
-        distribution.backlog = row.count
-        break
-      case "todo":
-        distribution.todo = row.count
-        break
-      case "in_progress":
-        distribution.inProgress = row.count
-        break
-      case "in_review":
-        distribution.inReview = row.count
-        break
-      case "done":
-        distribution.done = row.count
-        break
-      case "cancelled":
-        distribution.cancelled = row.count
-        break
+    const key = STATUS_KEY_MAP[row.status]
+    if (key) {
+      distribution[key] = row.count
     }
   }
 
