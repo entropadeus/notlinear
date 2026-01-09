@@ -4,9 +4,10 @@ import { Issue } from "@/lib/actions/issues"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { motion } from "framer-motion"
 import { formatRelativeTime } from "@/lib/utils"
-import { Circle, CheckCircle2, ArrowLeft } from "lucide-react"
+import { Circle, CheckCircle2, ArrowLeft, UserCircle } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { updateIssue } from "@/lib/actions/issues"
@@ -29,11 +30,19 @@ interface Comment {
   }
 }
 
+interface Member {
+  id: string
+  name: string
+  email: string
+  image: string | null
+}
+
 interface IssueDetailProps {
   issue: Issue
   workspaceSlug: string
   initialComments?: Comment[]
   initialRevisions?: Revision[]
+  members?: Member[]
 }
 
 const statusOptions = [
@@ -53,12 +62,15 @@ const priorityOptions = [
   { value: "urgent", label: "Urgent" },
 ]
 
-export function IssueDetail({ issue, workspaceSlug, initialComments = [], initialRevisions = [] }: IssueDetailProps) {
+export function IssueDetail({ issue, workspaceSlug, initialComments = [], initialRevisions = [], members = [] }: IssueDetailProps) {
   const { toast } = useToast()
   const router = useRouter()
   const [status, setStatus] = useState(issue.status)
   const [priority, setPriority] = useState(issue.priority)
+  const [assigneeId, setAssigneeId] = useState(issue.assigneeId || "unassigned")
   const [isUpdating, setIsUpdating] = useState(false)
+
+  const currentAssignee = assigneeId !== "unassigned" ? members.find(m => m.id === assigneeId) : null
 
   const handleStatusChange = async (newStatus: string) => {
     setIsUpdating(true)
@@ -87,6 +99,23 @@ export function IssueDetail({ issue, workspaceSlug, initialComments = [], initia
       toast({
         title: "Error",
         description: "Failed to update priority",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleAssigneeChange = async (newAssigneeId: string) => {
+    setIsUpdating(true)
+    try {
+      await updateIssue(issue.id, { assigneeId: newAssigneeId === "unassigned" ? null : newAssigneeId })
+      setAssigneeId(newAssigneeId)
+      router.refresh()
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update assignee",
         variant: "destructive",
       })
     } finally {
@@ -176,6 +205,59 @@ export function IssueDetail({ issue, workspaceSlug, initialComments = [], initia
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Assignee</label>
+                {members.length > 0 ? (
+                  <Select value={assigneeId} onValueChange={handleAssigneeChange} disabled={isUpdating}>
+                    <SelectTrigger>
+                      <SelectValue>
+                        {currentAssignee ? (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={currentAssignee.image || undefined} />
+                              <AvatarFallback className="text-xs">
+                                {currentAssignee.name?.charAt(0) || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{currentAssignee.name}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <UserCircle className="h-5 w-5" />
+                            <span>Unassigned</span>
+                          </div>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">
+                        <div className="flex items-center gap-2">
+                          <UserCircle className="h-5 w-5 text-muted-foreground" />
+                          <span>Unassigned</span>
+                        </div>
+                      </SelectItem>
+                      {members.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={member.image || undefined} />
+                              <AvatarFallback className="text-xs">
+                                {member.name?.charAt(0) || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{member.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-2">
+                    {currentAssignee ? currentAssignee.name : "Unassigned"}
+                  </p>
+                )}
               </div>
 
               <div>

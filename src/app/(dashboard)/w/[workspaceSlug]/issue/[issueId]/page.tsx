@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { getIssues } from "@/lib/actions/issues"
 import { getComments } from "@/lib/actions/comments"
 import { getRevisions } from "@/lib/actions/revisions"
+import { getWorkspaceMembersForFilter } from "@/lib/actions/filters"
 import { IssueDetail } from "@/components/issues/issue-detail"
 import { getWorkspaceBySlug } from "@/lib/actions/workspaces"
 
@@ -30,10 +31,11 @@ export default async function IssuePage({
     redirect(`/w/${params.workspaceSlug}`)
   }
 
-  // Fetch comments and revisions in parallel
-  const [comments, revisions] = await Promise.all([
+  // Fetch comments, revisions, and members in parallel
+  const [comments, revisions, members] = await Promise.all([
     getComments(issue.id),
     getRevisions(issue.id),
+    getWorkspaceMembersForFilter(workspace.id),
   ])
 
   return (
@@ -44,6 +46,7 @@ export default async function IssuePage({
           workspaceSlug={params.workspaceSlug}
           initialComments={comments}
           initialRevisions={revisions}
+          members={members}
         />
       </div>
     </div>

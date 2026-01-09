@@ -246,7 +246,7 @@ export function ProjectContent({ project, issues, workspaceSlug, projectId, work
           animate={{ opacity: 1 }}
           transition={{ delay: 0.25 }}
         >
-          <IssueList issues={issues} workspaceSlug={workspaceSlug} />
+          <IssueList issues={issues} workspaceSlug={workspaceSlug} members={members} />
         </motion.div>
       </div>
 
@@ -254,6 +254,7 @@ export function ProjectContent({ project, issues, workspaceSlug, projectId, work
         open={showCreateIssue}
         onOpenChange={setShowCreateIssue}
         projectId={projectId}
+        members={members}
       />
 
       <DeleteProjectDialog

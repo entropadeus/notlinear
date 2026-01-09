@@ -2,14 +2,23 @@
 
 import { Issue } from "@/lib/actions/issues"
 import { Card, CardContent } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { formatRelativeTime, cn } from "@/lib/utils"
 import { Circle, CheckCircle2, Clock, Archive, XCircle, Loader2, ListTodo, ArrowRight } from "lucide-react"
 
+interface Member {
+  id: string
+  name: string
+  email: string
+  image: string | null
+}
+
 interface IssueListProps {
   issues: Issue[]
   workspaceSlug: string
+  members?: Member[]
 }
 
 const statusConfig = {
@@ -29,13 +38,19 @@ const priorityConfig = {
   no_priority: { label: "", color: "" },
 }
 
-export function IssueList({ issues, workspaceSlug }: IssueListProps) {
+export function IssueList({ issues, workspaceSlug, members = [] }: IssueListProps) {
+  const getAssignee = (assigneeId: string | null) => {
+    if (!assigneeId) return null
+    return members.find(m => m.id === assigneeId)
+  }
+
   return (
     <div className="space-y-2">
       {issues.map((issue, index) => {
         const status = statusConfig[issue.status as keyof typeof statusConfig] || statusConfig.backlog
         const StatusIcon = status.icon
         const priority = priorityConfig[issue.priority as keyof typeof priorityConfig] || priorityConfig.no_priority
+        const assignee = getAssignee(issue.assigneeId)
 
         return (
           <motion.div
@@ -66,6 +81,14 @@ export function IssueList({ issues, workspaceSlug }: IssueListProps) {
                       <span className={cn("text-xs px-2 py-1 rounded-full font-medium", priority.color)}>
                         {priority.label}
                       </span>
+                    )}
+                    {assignee && (
+                      <Avatar className="h-6 w-6" title={assignee.name}>
+                        <AvatarImage src={assignee.image || undefined} />
+                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                          {assignee.name?.charAt(0) || "?"}
+                        </AvatarFallback>
+                      </Avatar>
                     )}
                     <span className="text-xs text-muted-foreground whitespace-nowrap">
                       {formatRelativeTime(issue.createdAt)}
