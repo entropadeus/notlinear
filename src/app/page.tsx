@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { motion, useMotionValue, useTransform, useSpring } from "framer-motion"
 import { useEffect, useRef, useState } from "react"
-import { ArrowRight, Zap, GitBranch, Users, CheckCircle2, Circle, Loader2 } from "lucide-react"
+import { ArrowRight, Zap, GitBranch, Users, CheckCircle2, Circle, Loader2, Code2 } from "lucide-react"
 
 // Floating Issue Card Component
 function FloatingCard({
@@ -300,7 +300,7 @@ export default function HomePage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span className="text-sm text-muted-foreground">Now in public beta</span>
+            <span className="text-sm text-muted-foreground">100% open source</span>
           </div>
         </motion.div>
 
@@ -341,10 +341,10 @@ export default function HomePage() {
             transition={{ delay: 0.4, duration: 0.6, ease: [0.19, 1, 0.22, 1] }}
             className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
           >
-            The issue tracker built for teams who move fast.
-            <span className="text-foreground"> Real-time collaboration</span>,
-            <span className="text-foreground"> GitHub integration</span>, and
-            <span className="text-foreground"> keyboard-first</span> design.
+            The <span className="text-foreground">open source</span> Linear alternative.
+            <span className="text-foreground"> Self-host it</span>,
+            <span className="text-foreground"> fork it</span>,
+            <span className="text-foreground"> make it yours</span>.
           </motion.p>
         </motion.div>
 
@@ -418,24 +418,30 @@ export default function HomePage() {
             Everything you need to ship
           </motion.h2>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <FeatureCard
+              icon={Code2}
+              title="Fully open source"
+              description="No vendor lock-in. Self-host on your infra, audit the code, contribute features. Your data, your rules."
+              delay={1.4}
+            />
             <FeatureCard
               icon={Zap}
               title="Lightning fast"
               description="Optimistic updates and keyboard shortcuts for instant feedback. Built for speed demons."
-              delay={1.4}
+              delay={1.5}
             />
             <FeatureCard
               icon={GitBranch}
               title="GitHub native"
               description="Link commits and PRs automatically. See code changes alongside your issues."
-              delay={1.5}
+              delay={1.6}
             />
             <FeatureCard
               icon={Users}
               title="Real-time collab"
               description="See who's online, get instant updates. Collaboration without the refresh button."
-              delay={1.6}
+              delay={1.7}
             />
           </div>
         </motion.div>
