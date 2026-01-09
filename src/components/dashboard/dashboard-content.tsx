@@ -3,10 +3,11 @@
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, FolderKanban, LayoutList, CheckCircle2, Circle, TrendingUp, Activity, ArrowRight } from "lucide-react"
+import { Plus, FolderKanban, LayoutList, CheckCircle2, Circle, TrendingUp, Activity, ArrowRight, Zap } from "lucide-react"
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { WorkspaceStats } from "@/lib/actions/stats"
+import { WorkspaceStats, StatusDistribution } from "@/lib/actions/stats"
+import { ActivityChart } from "./activity-chart"
 import { cn } from "@/lib/utils"
 
 interface Workspace {
@@ -20,9 +21,10 @@ interface DashboardContentProps {
   workspaces: Workspace[]
   userName: string
   workspaceStats?: Record<string, WorkspaceStats>
+  statusDistribution?: StatusDistribution
 }
 
-export function DashboardContent({ workspaces, userName, workspaceStats = {} }: DashboardContentProps) {
+export function DashboardContent({ workspaces, userName, workspaceStats = {}, statusDistribution }: DashboardContentProps) {
   // Calculate totals across all workspaces
   const totals = Object.values(workspaceStats).reduce(
     (acc, stats) => ({
@@ -139,39 +141,66 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {} }: 
             })}
           </div>
 
-          {/* Overall Progress */}
-          {totals.totalIssues > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35 }}
-              className="mt-5"
-            >
-              <Card className="overflow-hidden border-border/50">
-                <CardContent className="py-5">
-                  <div className="flex items-center gap-5">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-600/10">
-                      <TrendingUp className="h-5 w-5 text-emerald-400" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm text-muted-foreground">Overall Completion Rate</span>
-                        <span className="stat-number text-lg text-foreground">{overallCompletionRate}%</span>
+          {/* Overall Progress & Activity Chart - Two Column Layout */}
+          <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Overall Progress */}
+            {totals.totalIssues > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+              >
+                <Card className="overflow-hidden border-border/50 h-full">
+                  <CardContent className="py-5">
+                    <div className="flex items-center gap-5">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-600/10">
+                        <TrendingUp className="h-5 w-5 text-emerald-400" />
                       </div>
-                      <div className="h-2.5 w-full rounded-full bg-surface-2 overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${overallCompletionRate}%` }}
-                          transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
-                          className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full progress-glow"
-                        />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm text-muted-foreground">Overall Completion Rate</span>
+                          <span className="stat-number text-lg text-foreground">{overallCompletionRate}%</span>
+                        </div>
+                        <div className="h-2.5 w-full rounded-full bg-surface-2 overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${overallCompletionRate}%` }}
+                            transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
+                            className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full progress-glow"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
+
+                    {/* Quick Actions */}
+                    <div className="mt-6 pt-5 border-t border-border/30">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Zap className="h-4 w-4 text-orange-400" />
+                          <span>Quick Stats</span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-1.5">
+                            <div className="h-2 w-2 rounded-full bg-orange-400 animate-pulse" />
+                            <span className="text-muted-foreground">{totals.openIssues} active</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="h-2 w-2 rounded-full bg-emerald-400" />
+                            <span className="text-muted-foreground">{totals.completedIssues} done</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Activity Chart */}
+            {statusDistribution && statusDistribution.total > 0 && (
+              <ActivityChart distribution={statusDistribution} />
+            )}
+          </div>
         </motion.div>
       )}
 

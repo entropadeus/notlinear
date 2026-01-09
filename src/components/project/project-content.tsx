@@ -17,8 +17,10 @@ import { useState } from "react"
 import { CreateIssueDialog } from "@/components/issues/create-issue-dialog"
 import { DeleteProjectDialog } from "@/components/project/delete-project-dialog"
 import { EditProjectDialog } from "@/components/project/edit-project-dialog"
+import { FilterBar } from "@/components/filters"
 import { ProjectStats } from "@/lib/actions/stats"
 import { Issue } from "@/lib/actions/issues"
+import { WorkspaceMember, LabelOption } from "@/lib/actions/filters"
 import { cn } from "@/lib/utils"
 
 interface Project {
@@ -34,7 +36,11 @@ interface ProjectContentProps {
   issues: Issue[]
   workspaceSlug: string
   projectId: string
+  workspaceId: string
   projectStats?: ProjectStats | null
+  members: WorkspaceMember[]
+  labels: LabelOption[]
+  currentUserId: string
 }
 
 const statusConfig = [
@@ -46,7 +52,7 @@ const statusConfig = [
   { key: "cancelled", label: "Cancelled", icon: XCircle, color: "text-red-400", gradient: "from-red-500/20 to-red-600/10" },
 ]
 
-export function ProjectContent({ project, issues, workspaceSlug, projectId, projectStats }: ProjectContentProps) {
+export function ProjectContent({ project, issues, workspaceSlug, projectId, workspaceId, projectStats, members, labels, currentUserId }: ProjectContentProps) {
   const [showCreateIssue, setShowCreateIssue] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -200,18 +206,38 @@ export function ProjectContent({ project, issues, workspaceSlug, projectId, proj
           </motion.div>
         )}
 
+        {/* Filter Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-6"
+        >
+          <Card className="overflow-hidden border-border/50 bg-gradient-to-br from-card to-surface-2/50">
+            <CardContent className="py-4">
+              <FilterBar
+                workspaceId={workspaceId}
+                projectId={projectId}
+                members={members}
+                labels={labels}
+                currentUserId={currentUserId}
+              />
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Issues Header */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
           className="mb-5"
         >
           <div className="section-header">
             <h2 className="text-lg font-semibold">Issues</h2>
           </div>
           <p className="text-sm text-muted-foreground mt-1 ml-4">
-            {issues.length} issue{issues.length !== 1 ? "s" : ""}
+            {issues.length} issue{issues.length !== 1 ? "s" : ""} {issues.length < (projectStats?.totalIssues || 0) && <span className="text-primary">(filtered)</span>}
           </p>
         </motion.div>
 

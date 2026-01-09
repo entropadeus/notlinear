@@ -125,3 +125,75 @@ export async function getAllProjectsStats(workspaceId: string): Promise<Map<stri
   return statsMap
 }
 
+// Status distribution for dashboard chart
+export interface StatusDistribution {
+  total: number
+  backlog: number
+  todo: number
+  inProgress: number
+  inReview: number
+  done: number
+  cancelled: number
+}
+
+/**
+ * Get issue status distribution across all workspaces the user has access to
+ */
+export async function getStatusDistribution(): Promise<StatusDistribution> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return {
+      total: 0,
+      backlog: 0,
+      todo: 0,
+      inProgress: 0,
+      inReview: 0,
+      done: 0,
+      cancelled: 0,
+    }
+  }
+
+  // Get all workspaces user is a member of
+  const userWorkspaces = await db
+    .select({ workspaceId: workspaceMembers.workspaceId })
+    .from(workspaceMembers)
+    .where(eq(workspaceMembers.userId, session.user.id))
+
+  if (userWorkspaces.length === 0) {
+    return {
+      total: 0,
+      backlog: 0,
+      todo: 0,
+      inProgress: 0,
+      inReview: 0,
+      done: 0,
+      cancelled: 0,
+    }
+  }
+
+  const workspaceIds = userWorkspaces.map(w => w.workspaceId)
+
+  // Get all issues from user's workspaces
+  const allIssues = await db
+    .select({ status: issues.status })
+    .from(issues)
+    .where(
+      workspaceIds.length === 1
+        ? eq(issues.workspaceId, workspaceIds[0])
+        : sql`${issues.workspaceId} IN (${sql.join(workspaceIds.map(id => sql`${id}`), sql`, `)})`
+    )
+
+  // Build distribution
+  const distribution: StatusDistribution = {
+    total: allIssues.length,
+    backlog: allIssues.filter(i => i.status === "backlog").length,
+    todo: allIssues.filter(i => i.status === "todo").length,
+    inProgress: allIssues.filter(i => i.status === "in_progress").length,
+    inReview: allIssues.filter(i => i.status === "in_review").length,
+    done: allIssues.filter(i => i.status === "done").length,
+    cancelled: allIssues.filter(i => i.status === "cancelled").length,
+  }
+
+  return distribution
+}
+

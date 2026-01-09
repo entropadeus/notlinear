@@ -204,6 +204,23 @@ export const workspaceInvites = sqliteTable("workspace_invites", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
+// Saved views - for filter presets
+export const views = sqliteTable("views", {
+  id: text("id").primaryKey().$defaultFn(generateId),
+  name: text("name").notNull(),
+  description: text("description"),
+  filters: text("filters").notNull(), // JSON stringified IssueFilters
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  projectId: text("project_id").references(() => projects.id, { onDelete: "cascade" }), // null = workspace-level view
+  createdById: text("created_by_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  icon: text("icon"),
+  color: text("color"),
+  isShared: integer("is_shared", { mode: "boolean" }).default(false), // visible to all workspace members
+  position: integer("position").notNull().default(0), // for ordering
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
@@ -296,4 +313,10 @@ export const issuePullRequestsRelations = relations(issuePullRequests, ({ one })
 export const workspaceInvitesRelations = relations(workspaceInvites, ({ one }) => ({
   workspace: one(workspaces, { fields: [workspaceInvites.workspaceId], references: [workspaces.id] }),
   createdBy: one(users, { fields: [workspaceInvites.createdById], references: [users.id] }),
+}));
+
+export const viewsRelations = relations(views, ({ one }) => ({
+  workspace: one(workspaces, { fields: [views.workspaceId], references: [workspaces.id] }),
+  project: one(projects, { fields: [views.projectId], references: [projects.id] }),
+  createdBy: one(users, { fields: [views.createdById], references: [users.id] }),
 }));
