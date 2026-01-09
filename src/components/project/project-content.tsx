@@ -9,11 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plus, LayoutGrid, Circle, Loader2, CheckCircle2, XCircle, Clock, Archive, MoreHorizontal, Trash2, ArrowLeft, Pencil, ListTodo } from "lucide-react"
+import { Plus, LayoutGrid, List, Circle, Loader2, CheckCircle2, XCircle, Clock, Archive, MoreHorizontal, Trash2, ArrowLeft, Pencil, ListTodo } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { IssueList } from "@/components/issues/issue-list"
+import { IssueGrid } from "@/components/issues/issue-grid"
 import { useState } from "react"
+import { useLocalStorage } from "@/hooks/use-local-storage"
 import { CreateIssueDialog } from "@/components/issues/create-issue-dialog"
 import { DeleteProjectDialog } from "@/components/project/delete-project-dialog"
 import { EditProjectDialog } from "@/components/project/edit-project-dialog"
@@ -52,10 +54,13 @@ const statusConfig = [
   { key: "cancelled", label: "Cancelled", icon: XCircle, color: "text-red-400", gradient: "from-red-500/20 to-red-600/10" },
 ]
 
+type ViewMode = "list" | "grid"
+
 export function ProjectContent({ project, issues, workspaceSlug, projectId, workspaceId, projectStats, members, labels, currentUserId }: ProjectContentProps) {
   const [showCreateIssue, setShowCreateIssue] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [viewMode, setViewMode] = useLocalStorage<ViewMode>(`project-view-${projectId}`, "list")
 
   const completionRate = projectStats && projectStats.totalIssues > 0
     ? Math.round((projectStats.done / projectStats.totalIssues) * 100)
@@ -94,12 +99,30 @@ export function ProjectContent({ project, issues, workspaceSlug, projectId, work
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Link href={`/w/${workspaceSlug}/projects/${projectId}/board`}>
-              <Button variant="outline" className="border-border/50 hover:bg-surface-2">
-                <LayoutGrid className="mr-2 h-4 w-4" />
-                Board View
+            <div className="flex items-center rounded-lg border border-border/50 p-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "h-8 px-3 rounded-md",
+                  viewMode === "list" ? "bg-surface-2 text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <List className="h-4 w-4" />
               </Button>
-            </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className={cn(
+                  "h-8 px-3 rounded-md",
+                  viewMode === "grid" ? "bg-surface-2 text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
             <Button onClick={() => setShowCreateIssue(true)} className="btn-premium text-primary-foreground font-semibold">
               <Plus className="mr-2 h-4 w-4" />
               New Issue
@@ -246,7 +269,11 @@ export function ProjectContent({ project, issues, workspaceSlug, projectId, work
           animate={{ opacity: 1 }}
           transition={{ delay: 0.25 }}
         >
-          <IssueList issues={issues} workspaceSlug={workspaceSlug} members={members} />
+          {viewMode === "list" ? (
+            <IssueList issues={issues} workspaceSlug={workspaceSlug} members={members} />
+          ) : (
+            <IssueGrid issues={issues} workspaceSlug={workspaceSlug} members={members} />
+          )}
         </motion.div>
       </div>
 

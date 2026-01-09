@@ -280,8 +280,8 @@ export function Sidebar({ session }: SidebarProps) {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full h-auto py-2.5 hover:bg-surface-2 rounded-lg transition-all duration-200",
-                      isCollapsed ? "px-0 justify-center" : "justify-start gap-3 px-3"
+                      "w-full h-14 hover:bg-surface-2 rounded-lg transition-all duration-200 justify-start items-center",
+                      isCollapsed ? "px-[6px]" : "gap-3 px-3"
                     )}
                   >
                     <div className="relative flex-shrink-0">
@@ -296,9 +296,9 @@ export function Sidebar({ session }: SidebarProps) {
                     <AnimatePresence mode="wait">
                       {!isCollapsed && (
                         <motion.div
-                          initial={{ opacity: 0, x: -8, filter: "blur(4px)" }}
-                          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                          exit={{ opacity: 0, x: -8, filter: "blur(4px)" }}
+                          initial={{ opacity: 0, y: 12, filter: "blur(4px)" }}
+                          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                          exit={{ opacity: 0, y: 12, filter: "blur(4px)" }}
                           transition={{
                             type: "spring",
                             ...springConfig.text,

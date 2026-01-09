@@ -28,6 +28,7 @@ import {
   Hash,
 } from "lucide-react"
 import { useState, useMemo } from "react"
+import { useLocalStorage } from "@/hooks/use-local-storage"
 import { cn } from "@/lib/utils"
 import type { ProjectWithStats } from "@/lib/actions/projects"
 
@@ -39,7 +40,7 @@ type ViewMode = "grid" | "list"
 
 export function ProjectsContent({ projects }: ProjectsContentProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [viewMode, setViewMode] = useState<ViewMode>("grid")
+  const [viewMode, setViewMode] = useLocalStorage<ViewMode>("dashboard-projects-view", "grid")
 
   const filteredProjects = useMemo(() => {
     if (!searchQuery.trim()) return projects
