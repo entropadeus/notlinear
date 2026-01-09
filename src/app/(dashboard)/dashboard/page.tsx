@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { getWorkspaces } from "@/lib/actions/workspaces"
-import { getWorkspaceStats, getStatusDistribution, WorkspaceStats } from "@/lib/actions/stats"
+import { getWorkspaceStats, getStatusDistribution, getActivityTrend, getActivityHeatmapData, getMostActiveProject, WorkspaceStats } from "@/lib/actions/stats"
 import { DashboardContent } from "@/components/dashboard/dashboard-content"
 
 export default async function DashboardPage() {
@@ -13,10 +13,13 @@ export default async function DashboardPage() {
 
   const workspaces = await getWorkspaces()
 
-  // Get stats for all workspaces and status distribution in parallel
-  const [statsResults, statusDistribution] = await Promise.all([
+  // Get stats for all workspaces, status distribution, activity trend, heatmap, and most active project in parallel
+  const [statsResults, statusDistribution, activityTrend, heatmapData, mostActiveProject] = await Promise.all([
     Promise.all(workspaces.map(w => getWorkspaceStats(w.id))),
     getStatusDistribution(),
+    getActivityTrend(),
+    getActivityHeatmapData(),
+    getMostActiveProject(),
   ])
 
   const workspaceStats: Record<string, WorkspaceStats> = {}
@@ -32,6 +35,9 @@ export default async function DashboardPage() {
       userName={session.user?.name || "User"}
       workspaceStats={workspaceStats}
       statusDistribution={statusDistribution}
+      activityTrend={activityTrend}
+      heatmapData={heatmapData}
+      mostActiveProject={mostActiveProject}
     />
   )
 }

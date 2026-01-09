@@ -1,14 +1,18 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useCallback, useMemo, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, FolderKanban, LayoutList, CheckCircle2, Circle, TrendingUp, Activity, ArrowRight, Zap } from "lucide-react"
+import { Plus, FolderKanban, LayoutList, CheckCircle2, Circle, TrendingUp, Activity, ArrowRight, Zap, Flame } from "lucide-react"
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { WorkspaceStats, StatusDistribution } from "@/lib/actions/stats"
+import { WorkspaceStats, StatusDistribution, ActivityTrend, ActivityHeatmapData, MostActiveProject } from "@/lib/actions/stats"
 import { ActivityChart } from "./activity-chart"
+import { ActivityHeatmap } from "./activity-heatmap"
 import { cn } from "@/lib/utils"
+import { useDashboardRealtime } from "@/lib/realtime/use-realtime"
 
 interface Workspace {
   id: string
@@ -22,17 +26,42 @@ interface DashboardContentProps {
   userName: string
   workspaceStats?: Record<string, WorkspaceStats>
   statusDistribution?: StatusDistribution
+  activityTrend?: ActivityTrend
+  heatmapData?: ActivityHeatmapData
+  mostActiveProject?: MostActiveProject | null
 }
 
-export function DashboardContent({ workspaces, userName, workspaceStats = {}, statusDistribution }: DashboardContentProps) {
+export function DashboardContent({ workspaces, userName, workspaceStats = {}, statusDistribution, activityTrend, heatmapData, mostActiveProject }: DashboardContentProps) {
+  const router = useRouter()
+  const lastRefreshRef = useRef(Date.now())
+
+  // Get workspace IDs for realtime connection
+  const workspaceIds = useMemo(() => workspaces.map(w => w.id), [workspaces])
+
+  // Debounced refresh to avoid hammering the server
+  const handleActivityChange = useCallback(() => {
+    const now = Date.now()
+    // Only refresh if more than 2 seconds since last refresh
+    if (now - lastRefreshRef.current > 2000) {
+      lastRefreshRef.current = now
+      router.refresh()
+    }
+  }, [router])
+
+  // Connect to realtime for all workspaces
+  useDashboardRealtime(workspaceIds, handleActivityChange)
+
   // Calculate totals across all workspaces
-  const totals = Object.values(workspaceStats).reduce(
-    (acc, stats) => ({
-      totalProjects: acc.totalProjects + stats.totalProjects,
-      totalIssues: acc.totalIssues + stats.totalIssues,
-      completedIssues: acc.completedIssues + stats.completedIssues,
-      openIssues: acc.openIssues + stats.openIssues,
-    }),
+  const totals = Object.values(workspaceStats || {}).reduce(
+    (acc, stats) => {
+      if (!stats) return acc
+      return {
+        totalProjects: acc.totalProjects + (stats.totalProjects || 0),
+        totalIssues: acc.totalIssues + (stats.totalIssues || 0),
+        completedIssues: acc.completedIssues + (stats.completedIssues || 0),
+        openIssues: acc.openIssues + (stats.openIssues || 0),
+      }
+    },
     { totalProjects: 0, totalIssues: 0, completedIssues: 0, openIssues: 0 }
   )
 
@@ -172,7 +201,7 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
                       </div>
                     </div>
 
-                    {/* Quick Actions */}
+                    {/* Quick Stats */}
                     <div className="mt-6 pt-5 border-t border-border/30">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -191,6 +220,44 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
                         </div>
                       </div>
                     </div>
+
+                    {/* Top Project */}
+                    {mostActiveProject && (
+                      <div className="mt-5 pt-5 border-t border-border/30">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                          <Flame className="h-4 w-4 text-orange-500" />
+                          <span>Top Project</span>
+                        </div>
+                        <Link href={`/w/${workspaces.find(w => w.name === mostActiveProject.workspaceName)?.slug || ""}/projects/${mostActiveProject.id}`}>
+                          <div className="group flex items-center justify-between p-3 -mx-3 rounded-lg hover:bg-surface-2/50 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/10">
+                                <FolderKanban className="h-4 w-4 text-orange-400" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                                  {mostActiveProject.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {mostActiveProject.issueCount} total issues
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs">
+                              <div className="flex items-center gap-1.5">
+                                <Circle className="h-2.5 w-2.5 text-orange-400" />
+                                <span className="text-muted-foreground">{mostActiveProject.openIssues}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <CheckCircle2 className="h-2.5 w-2.5 text-emerald-400" />
+                                <span className="text-muted-foreground">{mostActiveProject.completedIssues}</span>
+                              </div>
+                              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                            </div>
+                          </div>
+                        </Link>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
@@ -198,9 +265,16 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
 
             {/* Activity Chart */}
             {statusDistribution && statusDistribution.total > 0 && (
-              <ActivityChart distribution={statusDistribution} />
+              <ActivityChart distribution={statusDistribution} activityTrend={activityTrend} />
             )}
           </div>
+
+          {/* Activity Heatmap */}
+          {heatmapData && (
+            <div className="mt-5">
+              <ActivityHeatmap data={heatmapData} />
+            </div>
+          )}
         </motion.div>
       )}
 

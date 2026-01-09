@@ -131,32 +131,6 @@ function ParticleField() {
   )
 }
 
-// Animated stat counter
-function AnimatedCounter({ value, suffix = "" }: { value: number, suffix?: string }) {
-  const [count, setCount] = useState(0)
-
-  useEffect(() => {
-    const duration = 2000
-    const steps = 60
-    const increment = value / steps
-    let current = 0
-
-    const timer = setInterval(() => {
-      current += increment
-      if (current >= value) {
-        setCount(value)
-        clearInterval(timer)
-      } else {
-        setCount(Math.floor(current))
-      }
-    }, duration / steps)
-
-    return () => clearInterval(timer)
-  }, [value])
-
-  return <span className="tabular-nums">{count.toLocaleString()}{suffix}</span>
-}
-
 // Feature card
 function FeatureCard({
   icon: Icon,
@@ -375,33 +349,6 @@ export default function HomePage() {
           </Link>
         </motion.div>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="flex flex-wrap justify-center gap-8 sm:gap-16 mb-20"
-        >
-          {[
-            { value: 10000, suffix: "+", label: "Issues tracked" },
-            { value: 500, suffix: "+", label: "Teams" },
-            { value: 99.9, suffix: "%", label: "Uptime" },
-          ].map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9 + i * 0.1 }}
-              className="text-center"
-            >
-              <div className="text-4xl sm:text-5xl font-heading font-bold text-gradient-amber mb-1">
-                <AnimatedCounter value={stat.value} suffix={stat.suffix} />
-              </div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
-            </motion.div>
-          ))}
-        </motion.div>
-
         {/* Features */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -448,6 +395,18 @@ export default function HomePage() {
 
         {/* Bottom gradient fade */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+
+        {/* Footer */}
+        <motion.footer
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2 }}
+          className="absolute bottom-6 left-0 right-0 text-center"
+        >
+          <p className="text-sm text-muted-foreground">
+            Designed by <span className="text-foreground font-medium">entropadeus</span>
+          </p>
+        </motion.footer>
       </div>
     </div>
   )

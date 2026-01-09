@@ -42,3 +42,6 @@ next-env.d.ts
 # drizzle
 /src/lib/db/migrations
 
+# claude
+CLAUDE.md
+

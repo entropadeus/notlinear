@@ -3,11 +3,12 @@
 import { motion, useInView } from "framer-motion"
 import { useRef, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { StatusDistribution } from "@/lib/actions/stats"
+import { StatusDistribution, ActivityTrend } from "@/lib/actions/stats"
 import { cn } from "@/lib/utils"
 
 interface ActivityChartProps {
   distribution: StatusDistribution
+  activityTrend?: ActivityTrend
 }
 
 // Status configuration with colors matching the app's aesthetic
@@ -20,26 +21,7 @@ const STATUS_CONFIG = [
   { key: "cancelled", label: "Cancelled", color: "rgb(113, 113, 122)", glowColor: "rgba(113, 113, 122, 0.3)" },
 ] as const
 
-// Generate smooth velocity curve points
-function generateVelocityCurve(segments: number = 24): number[] {
-  const points: number[] = []
-  const baseHeight = 0.3
-  const variance = 0.5
-
-  for (let i = 0; i < segments; i++) {
-    // Create organic wave pattern with multiple frequencies
-    const wave1 = Math.sin((i / segments) * Math.PI * 2.5) * 0.3
-    const wave2 = Math.sin((i / segments) * Math.PI * 4) * 0.15
-    const wave3 = Math.cos((i / segments) * Math.PI * 1.5) * 0.2
-    const noise = (Math.random() - 0.5) * 0.1
-
-    const value = baseHeight + wave1 + wave2 + wave3 + noise
-    points.push(Math.max(0.05, Math.min(0.95, value + variance)))
-  }
-  return points
-}
-
-// Create SVG path from points
+// Create SVG path from activity data points
 function createSmoothPath(points: number[], width: number, height: number): string {
   if (points.length < 2) return ""
 
@@ -68,7 +50,18 @@ function createAreaPath(points: number[], width: number, height: number): string
   return `${linePath} L ${width} ${height} L 0 ${height} Z`
 }
 
-export function ActivityChart({ distribution }: ActivityChartProps) {
+// Normalize activity data to 0-1 range for chart rendering
+function normalizeActivityData(data: { count: number }[]): number[] {
+  if (data.length === 0) return []
+
+  const counts = data.map(d => d.count)
+  const maxCount = Math.max(...counts, 1) // avoid division by zero
+
+  // Normalize to 0-1 range, with some padding
+  return counts.map(c => Math.max(0.05, (c / maxCount) * 0.9 + 0.05))
+}
+
+export function ActivityChart({ distribution, activityTrend }: ActivityChartProps) {
   const chartRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(chartRef, { once: true, margin: "-50px" })
 
@@ -83,14 +76,17 @@ export function ActivityChart({ distribution }: ActivityChartProps) {
     })).filter(s => s.value > 0)
   }, [distribution])
 
-  // Generate velocity curve
-  const velocityPoints = useMemo(() => generateVelocityCurve(28), [])
+  // Use real activity data or empty array
+  const activityPoints = useMemo(() => {
+    if (!activityTrend?.data || activityTrend.data.length === 0) return []
+    return normalizeActivityData(activityTrend.data)
+  }, [activityTrend])
 
   const chartWidth = 320
   const chartHeight = 64
 
-  const linePath = createSmoothPath(velocityPoints, chartWidth, chartHeight)
-  const areaPath = createAreaPath(velocityPoints, chartWidth, chartHeight)
+  const linePath = activityPoints.length > 1 ? createSmoothPath(activityPoints, chartWidth, chartHeight) : ""
+  const areaPath = activityPoints.length > 1 ? createAreaPath(activityPoints, chartWidth, chartHeight) : ""
 
   if (distribution.total === 0) {
     return null
@@ -103,6 +99,14 @@ export function ActivityChart({ distribution }: ActivityChartProps) {
     cumulativePercent += seg.percentage
     return { ...seg, start }
   })
+
+  // Format percent change for display
+  const percentChange = activityTrend?.percentChange ?? 0
+  const percentChangeText = percentChange > 0 ? `+${percentChange}%` : `${percentChange}%`
+  const percentChangeColor = percentChange > 0 ? "text-emerald-400" : percentChange < 0 ? "text-red-400" : "text-muted-foreground"
+
+  const hasActivityData = activityPoints.length > 1
+  const totalActivity = activityTrend?.totalThisWeek ?? 0
 
   return (
     <motion.div
@@ -220,11 +224,17 @@ export function ActivityChart({ distribution }: ActivityChartProps) {
             ))}
           </div>
 
-          {/* Velocity Chart */}
+          {/* Activity Trend Chart */}
           <div className="relative">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-muted-foreground font-medium">Activity Trend</span>
-              <span className="text-xs text-emerald-400 font-medium">+12% this week</span>
+              <span className="text-xs text-muted-foreground font-medium">
+                Activity Trend {hasActivityData && <span className="text-foreground">({totalActivity} this week)</span>}
+              </span>
+              {hasActivityData && (
+                <span className={cn("text-xs font-medium", percentChangeColor)}>
+                  {percentChangeText} vs last week
+                </span>
+              )}
             </div>
 
             <div className="relative h-16 overflow-hidden rounded-lg">
@@ -235,101 +245,107 @@ export function ActivityChart({ distribution }: ActivityChartProps) {
                 ))}
               </div>
 
-              <svg
-                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                className="w-full h-full"
-                preserveAspectRatio="none"
-              >
-                <defs>
-                  {/* Gradient for area fill */}
-                  <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="rgb(249, 115, 22)" stopOpacity="0.3" />
-                    <stop offset="50%" stopColor="rgb(249, 115, 22)" stopOpacity="0.1" />
-                    <stop offset="100%" stopColor="rgb(249, 115, 22)" stopOpacity="0" />
-                  </linearGradient>
+              {hasActivityData ? (
+                <svg
+                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                  className="w-full h-full"
+                  preserveAspectRatio="none"
+                >
+                  <defs>
+                    {/* Gradient for area fill */}
+                    <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="rgb(249, 115, 22)" stopOpacity="0.3" />
+                      <stop offset="50%" stopColor="rgb(249, 115, 22)" stopOpacity="0.1" />
+                      <stop offset="100%" stopColor="rgb(249, 115, 22)" stopOpacity="0" />
+                    </linearGradient>
 
-                  {/* Gradient for line */}
-                  <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="rgb(251, 191, 36)" />
-                    <stop offset="50%" stopColor="rgb(249, 115, 22)" />
-                    <stop offset="100%" stopColor="rgb(239, 68, 68)" />
-                  </linearGradient>
+                    {/* Gradient for line */}
+                    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="rgb(251, 191, 36)" />
+                      <stop offset="50%" stopColor="rgb(249, 115, 22)" />
+                      <stop offset="100%" stopColor="rgb(239, 68, 68)" />
+                    </linearGradient>
 
-                  {/* Glow filter */}
-                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="2" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
+                    {/* Glow filter */}
+                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="2" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
 
-                  {/* Clip path for animation */}
-                  <clipPath id="revealClip">
-                    <motion.rect
-                      x="0"
-                      y="0"
-                      height={chartHeight}
-                      initial={{ width: 0 }}
-                      animate={isInView ? { width: chartWidth } : { width: 0 }}
-                      transition={{ duration: 1.5, delay: 0.6, ease: [0.19, 1, 0.22, 1] }}
-                    />
-                  </clipPath>
-                </defs>
+                    {/* Clip path for animation */}
+                    <clipPath id="revealClip">
+                      <motion.rect
+                        x="0"
+                        y="0"
+                        height={chartHeight}
+                        initial={{ width: 0 }}
+                        animate={isInView ? { width: chartWidth } : { width: 0 }}
+                        transition={{ duration: 1.5, delay: 0.6, ease: [0.19, 1, 0.22, 1] }}
+                      />
+                    </clipPath>
+                  </defs>
 
-                {/* Area fill */}
-                <path
-                  d={areaPath}
-                  fill="url(#areaGradient)"
-                  clipPath="url(#revealClip)"
-                />
-
-                {/* Main line with glow */}
-                <g clipPath="url(#revealClip)">
+                  {/* Area fill */}
                   <path
-                    d={linePath}
-                    fill="none"
-                    stroke="url(#lineGradient)"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    d={areaPath}
+                    fill="url(#areaGradient)"
+                    clipPath="url(#revealClip)"
+                  />
+
+                  {/* Main line with glow */}
+                  <g clipPath="url(#revealClip)">
+                    <path
+                      d={linePath}
+                      fill="none"
+                      stroke="url(#lineGradient)"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      filter="url(#glow)"
+                    />
+                  </g>
+
+                  {/* Animated dot at the end */}
+                  <motion.circle
+                    cx={chartWidth}
+                    cy={chartHeight - activityPoints[activityPoints.length - 1] * chartHeight}
+                    r="4"
+                    fill="rgb(249, 115, 22)"
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+                    transition={{ delay: 2, duration: 0.3, ease: "backOut" }}
                     filter="url(#glow)"
                   />
-                </g>
 
-                {/* Animated dot at the end */}
-                <motion.circle
-                  cx={chartWidth}
-                  cy={chartHeight - velocityPoints[velocityPoints.length - 1] * chartHeight}
-                  r="4"
-                  fill="rgb(249, 115, 22)"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
-                  transition={{ delay: 2, duration: 0.3, ease: "backOut" }}
-                  filter="url(#glow)"
-                />
-
-                {/* Pulse ring around dot */}
-                <motion.circle
-                  cx={chartWidth}
-                  cy={chartHeight - velocityPoints[velocityPoints.length - 1] * chartHeight}
-                  r="4"
-                  fill="none"
-                  stroke="rgb(249, 115, 22)"
-                  strokeWidth="1.5"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={isInView ? {
-                    opacity: [0, 0.6, 0],
-                    scale: [1, 2.5, 2.5],
-                  } : { opacity: 0 }}
-                  transition={{
-                    delay: 2.2,
-                    duration: 1.5,
-                    repeat: Infinity,
-                    repeatDelay: 1,
-                  }}
-                />
-              </svg>
+                  {/* Pulse ring around dot */}
+                  <motion.circle
+                    cx={chartWidth}
+                    cy={chartHeight - activityPoints[activityPoints.length - 1] * chartHeight}
+                    r="4"
+                    fill="none"
+                    stroke="rgb(249, 115, 22)"
+                    strokeWidth="1.5"
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={isInView ? {
+                      opacity: [0, 0.6, 0],
+                      scale: [1, 2.5, 2.5],
+                    } : { opacity: 0 }}
+                    transition={{
+                      delay: 2.2,
+                      duration: 1.5,
+                      repeat: Infinity,
+                      repeatDelay: 1,
+                    }}
+                  />
+                </svg>
+              ) : (
+                <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
+                  No activity data yet - create issues to see your trend
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

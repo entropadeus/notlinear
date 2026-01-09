@@ -213,3 +213,92 @@ export function usePresence(workspaceId: string) {
 
   return { isConnected, onlineUsers, onlineCount: onlineUsers.length }
 }
+
+// Hook for dashboard - connects to multiple workspaces and triggers callback on activity
+export function useDashboardRealtime(
+  workspaceIds: string[],
+  onActivityChange?: () => void
+) {
+  const [connectedCount, setConnectedCount] = useState(0)
+  const eventSourcesRef = useRef<Map<string, EventSource>>(new Map())
+  const onActivityChangeRef = useRef(onActivityChange)
+
+  useEffect(() => {
+    onActivityChangeRef.current = onActivityChange
+  }, [onActivityChange])
+
+  useEffect(() => {
+    if (workspaceIds.length === 0) return
+
+    const eventSources = eventSourcesRef.current
+
+    // Connect to each workspace
+    workspaceIds.forEach((workspaceId) => {
+      if (eventSources.has(workspaceId)) return // already connected
+
+      const url = `/api/realtime?workspaceId=${encodeURIComponent(workspaceId)}`
+      const eventSource = new EventSource(url)
+
+      eventSource.onopen = () => {
+        setConnectedCount((c) => c + 1)
+      }
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+
+          // Skip connection events
+          if (data.type === "connected") return
+
+          // Trigger callback on any activity event
+          const activityEvents: RealtimeEventType[] = [
+            "issue_created",
+            "issue_updated",
+            "issue_deleted",
+            "comment_added",
+          ]
+
+          if (activityEvents.includes(data.type)) {
+            onActivityChangeRef.current?.()
+          }
+        } catch (err) {
+          // ignore parse errors
+        }
+      }
+
+      eventSource.onerror = () => {
+        setConnectedCount((c) => Math.max(0, c - 1))
+        // Remove and let it reconnect
+        eventSources.delete(workspaceId)
+        eventSource.close()
+
+        // Reconnect after delay
+        setTimeout(() => {
+          // Re-trigger effect by checking if we should reconnect
+          if (!eventSources.has(workspaceId)) {
+            const newSource = new EventSource(url)
+            eventSources.set(workspaceId, newSource)
+            // Copy handlers
+            newSource.onopen = eventSource.onopen
+            newSource.onmessage = eventSource.onmessage
+            newSource.onerror = eventSource.onerror
+          }
+        }, 3000)
+      }
+
+      eventSources.set(workspaceId, eventSource)
+    })
+
+    return () => {
+      eventSources.forEach((es) => es.close())
+      eventSources.clear()
+      setConnectedCount(0)
+    }
+  }, [workspaceIds.join(",")]) // reconnect if workspace list changes
+
+  return {
+    isConnected: connectedCount > 0,
+    connectedCount,
+    totalWorkspaces: workspaceIds.length,
+  }
+}
