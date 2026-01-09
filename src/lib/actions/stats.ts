@@ -31,20 +31,51 @@ export async function getProjectStats(projectId: string): Promise<ProjectStats |
     return null
   }
 
-  const projectIssues = await db
-    .select()
+  // Use SQL aggregations instead of loading all rows into memory
+  const statsResult = await db
+    .select({
+      status: issues.status,
+      count: count(),
+    })
     .from(issues)
     .where(eq(issues.projectId, projectId))
+    .groupBy(issues.status)
 
+  // Initialize stats object
   const stats: ProjectStats = {
     projectId,
-    totalIssues: projectIssues.length,
-    backlog: projectIssues.filter(i => i.status === "backlog").length,
-    todo: projectIssues.filter(i => i.status === "todo").length,
-    inProgress: projectIssues.filter(i => i.status === "in_progress").length,
-    inReview: projectIssues.filter(i => i.status === "in_review").length,
-    done: projectIssues.filter(i => i.status === "done").length,
-    cancelled: projectIssues.filter(i => i.status === "cancelled").length,
+    totalIssues: 0,
+    backlog: 0,
+    todo: 0,
+    inProgress: 0,
+    inReview: 0,
+    done: 0,
+    cancelled: 0,
+  }
+
+  // Aggregate counts by status
+  for (const row of statsResult) {
+    stats.totalIssues += row.count
+    switch (row.status) {
+      case "backlog":
+        stats.backlog = row.count
+        break
+      case "todo":
+        stats.todo = row.count
+        break
+      case "in_progress":
+        stats.inProgress = row.count
+        break
+      case "in_review":
+        stats.inReview = row.count
+        break
+      case "done":
+        stats.done = row.count
+        break
+      case "cancelled":
+        stats.cancelled = row.count
+        break
+    }
   }
 
   return stats
@@ -71,22 +102,42 @@ export async function getWorkspaceStats(workspaceId: string): Promise<WorkspaceS
     return null
   }
 
-  const workspaceProjects = await db
-    .select()
+  // Use COUNT aggregations instead of loading all rows
+  const [projectCount] = await db
+    .select({ count: count() })
     .from(projects)
     .where(eq(projects.workspaceId, workspaceId))
 
-  const workspaceIssues = await db
-    .select()
+  // Get issue counts by status using SQL aggregations
+  const issueStats = await db
+    .select({
+      status: issues.status,
+      count: count(),
+    })
     .from(issues)
     .where(eq(issues.workspaceId, workspaceId))
+    .groupBy(issues.status)
+
+  let totalIssues = 0
+  let completedIssues = 0
+  let openIssues = 0
+
+  for (const row of issueStats) {
+    totalIssues += row.count
+    if (row.status === "done") {
+      completedIssues = row.count
+    }
+    if (row.status !== "done" && row.status !== "cancelled") {
+      openIssues += row.count
+    }
+  }
 
   return {
     workspaceId,
-    totalProjects: workspaceProjects.length,
-    totalIssues: workspaceIssues.length,
-    completedIssues: workspaceIssues.filter(i => i.status === "done").length,
-    openIssues: workspaceIssues.filter(i => i.status !== "done" && i.status !== "cancelled").length,
+    totalProjects: projectCount?.count || 0,
+    totalIssues,
+    completedIssues,
+    openIssues,
   }
 }
 
@@ -101,25 +152,65 @@ export async function getAllProjectsStats(workspaceId: string): Promise<Map<stri
     .from(projects)
     .where(eq(projects.workspaceId, workspaceId))
 
-  const allIssues = await db
-    .select()
+  if (workspaceProjects.length === 0) {
+    return new Map()
+  }
+
+  const projectIds = workspaceProjects.map(p => p.id)
+
+  // Use SQL aggregations grouped by projectId and status
+  const issueStats = await db
+    .select({
+      projectId: issues.projectId,
+      status: issues.status,
+      count: count(),
+    })
     .from(issues)
     .where(eq(issues.workspaceId, workspaceId))
+    .groupBy(issues.projectId, issues.status)
 
   const statsMap = new Map<string, ProjectStats>()
 
+  // Initialize stats for all projects
   for (const project of workspaceProjects) {
-    const projectIssues = allIssues.filter(i => i.projectId === project.id)
     statsMap.set(project.id, {
       projectId: project.id,
-      totalIssues: projectIssues.length,
-      backlog: projectIssues.filter(i => i.status === "backlog").length,
-      todo: projectIssues.filter(i => i.status === "todo").length,
-      inProgress: projectIssues.filter(i => i.status === "in_progress").length,
-      inReview: projectIssues.filter(i => i.status === "in_review").length,
-      done: projectIssues.filter(i => i.status === "done").length,
-      cancelled: projectIssues.filter(i => i.status === "cancelled").length,
+      totalIssues: 0,
+      backlog: 0,
+      todo: 0,
+      inProgress: 0,
+      inReview: 0,
+      done: 0,
+      cancelled: 0,
     })
+  }
+
+  // Aggregate counts by project and status
+  for (const row of issueStats) {
+    const stats = statsMap.get(row.projectId)
+    if (!stats) continue
+
+    stats.totalIssues += row.count
+    switch (row.status) {
+      case "backlog":
+        stats.backlog = row.count
+        break
+      case "todo":
+        stats.todo = row.count
+        break
+      case "in_progress":
+        stats.inProgress = row.count
+        break
+      case "in_review":
+        stats.inReview = row.count
+        break
+      case "done":
+        stats.done = row.count
+        break
+      case "cancelled":
+        stats.cancelled = row.count
+        break
+    }
   }
 
   return statsMap
@@ -173,25 +264,54 @@ export async function getStatusDistribution(): Promise<StatusDistribution> {
 
   const workspaceIds = userWorkspaces.map(w => w.workspaceId)
 
-  // Get all issues from user's workspaces
-  const allIssues = await db
-    .select({ status: issues.status })
+  // Use SQL aggregations instead of loading all rows
+  const statusStats = await db
+    .select({
+      status: issues.status,
+      count: count(),
+    })
     .from(issues)
     .where(
       workspaceIds.length === 1
         ? eq(issues.workspaceId, workspaceIds[0])
         : sql`${issues.workspaceId} IN (${sql.join(workspaceIds.map(id => sql`${id}`), sql`, `)})`
     )
+    .groupBy(issues.status)
 
-  // Build distribution
+  // Initialize distribution
   const distribution: StatusDistribution = {
-    total: allIssues.length,
-    backlog: allIssues.filter(i => i.status === "backlog").length,
-    todo: allIssues.filter(i => i.status === "todo").length,
-    inProgress: allIssues.filter(i => i.status === "in_progress").length,
-    inReview: allIssues.filter(i => i.status === "in_review").length,
-    done: allIssues.filter(i => i.status === "done").length,
-    cancelled: allIssues.filter(i => i.status === "cancelled").length,
+    total: 0,
+    backlog: 0,
+    todo: 0,
+    inProgress: 0,
+    inReview: 0,
+    done: 0,
+    cancelled: 0,
+  }
+
+  // Aggregate counts by status
+  for (const row of statusStats) {
+    distribution.total += row.count
+    switch (row.status) {
+      case "backlog":
+        distribution.backlog = row.count
+        break
+      case "todo":
+        distribution.todo = row.count
+        break
+      case "in_progress":
+        distribution.inProgress = row.count
+        break
+      case "in_review":
+        distribution.inReview = row.count
+        break
+      case "done":
+        distribution.done = row.count
+        break
+      case "cancelled":
+        distribution.cancelled = row.count
+        break
+    }
   }
 
   return distribution

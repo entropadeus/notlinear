@@ -8,11 +8,15 @@ import { ThemeProvider } from "@/components/providers/theme-provider"
 const bricolage = Bricolage_Grotesque({ 
   subsets: ["latin"],
   variable: "--font-heading",
+  display: "swap",
+  preload: true,
 })
 
 const manrope = Manrope({ 
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+  preload: true,
 })
 
 export const metadata: Metadata = {

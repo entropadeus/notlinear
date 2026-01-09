@@ -1,6 +1,5 @@
 "use client"
 
-import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { LayoutDashboard, FolderKanban, Settings, LogOut, Plus, ChevronLeft } from "lucide-react"
@@ -24,6 +23,7 @@ import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { CreateWorkspaceDialog } from "@/components/workspace/create-workspace-dialog"
 import { motion, AnimatePresence } from "framer-motion"
+import type { Session } from "next-auth"
 
 // Custom click animations for each nav icon (plays when tab becomes active)
 const iconAnimations = {
@@ -67,8 +67,11 @@ const springConfig = {
   icon: { stiffness: 600, damping: 20, mass: 0.3 },
 }
 
-export function Sidebar() {
-  const { data: session } = useSession()
+interface SidebarProps {
+  session: Session | null
+}
+
+export function Sidebar({ session }: SidebarProps) {
   const pathname = usePathname()
   const [showCreateWorkspace, setShowCreateWorkspace] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)

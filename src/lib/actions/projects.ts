@@ -5,7 +5,7 @@ import { projects, workspaces, workspaceMembers, issues, comments, labels, issue
 import { eq, and, count } from "drizzle-orm"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, unstable_cache, revalidateTag } from "next/cache"
 
 export async function createProject(
   workspaceId: string,
@@ -53,6 +53,8 @@ export async function createProject(
     .limit(1)
 
   revalidatePath(`/dashboard/${workspace[0]?.slug}/projects`)
+  revalidateTag(`projects-${workspaceId}`)
+  revalidateTag(`workspaces-${session.user.id}`)
   return project
 }
 
@@ -62,26 +64,38 @@ export async function getProjects(workspaceId: string) {
     return []
   }
 
-  // Verify user has access
-  const [member] = await db
-    .select()
-    .from(workspaceMembers)
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, workspaceId),
-        eq(workspaceMembers.userId, session.user.id)
-      )
-    )
-    .limit(1)
+  // Cache projects per workspace with 5 minute revalidation
+  const getCachedProjects = unstable_cache(
+    async (wsId: string, userId: string) => {
+      // Verify user has access
+      const [member] = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, wsId),
+            eq(workspaceMembers.userId, userId)
+          )
+        )
+        .limit(1)
 
-  if (!member) {
-    return []
-  }
+      if (!member) {
+        return []
+      }
 
-  return await db
-    .select()
-    .from(projects)
-    .where(eq(projects.workspaceId, workspaceId))
+      return await db
+        .select()
+        .from(projects)
+        .where(eq(projects.workspaceId, wsId))
+    },
+    ["workspace-projects"],
+    {
+      tags: [`projects-${workspaceId}`, `workspaces-${session.user.id}`],
+      revalidate: 300, // 5 minutes
+    }
+  )
+
+  return getCachedProjects(workspaceId, session.user.id)
 }
 
 export async function getProject(id: string) {
@@ -90,33 +104,45 @@ export async function getProject(id: string) {
     return null
   }
 
-  const [project] = await db
-    .select()
-    .from(projects)
-    .where(eq(projects.id, id))
-    .limit(1)
+  // Cache project lookup with 5 minute revalidation
+  const getCachedProject = unstable_cache(
+    async (projectId: string, userId: string) => {
+      const [project] = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .limit(1)
 
-  if (!project) {
-    return null
-  }
+      if (!project) {
+        return null
+      }
 
-  // Verify user has access
-  const [member] = await db
-    .select()
-    .from(workspaceMembers)
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, project.workspaceId),
-        eq(workspaceMembers.userId, session.user.id)
-      )
-    )
-    .limit(1)
+      // Verify user has access
+      const [member] = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, project.workspaceId),
+            eq(workspaceMembers.userId, userId)
+          )
+        )
+        .limit(1)
 
-  if (!member) {
-    return null
-  }
+      if (!member) {
+        return null
+      }
 
-  return project
+      return project
+    },
+    ["project-by-id"],
+    {
+      tags: [`project-${id}`, `workspaces-${session.user.id}`],
+      revalidate: 300, // 5 minutes
+    }
+  )
+
+  return getCachedProject(id, session.user.id)
 }
 
 export async function updateProject(
@@ -149,6 +175,8 @@ export async function updateProject(
     .limit(1)
 
   revalidatePath(`/dashboard/${workspace[0]?.slug}/projects/${id}`)
+  revalidateTag(`project-${id}`)
+  revalidateTag(`projects-${project.workspaceId}`)
   return updated
 }
 
@@ -235,6 +263,8 @@ export async function deleteProject(id: string) {
     .limit(1)
 
   revalidatePath(`/w/${workspace[0]?.slug}`)
+  revalidateTag(`projects-${project.workspaceId}`)
+  revalidateTag(`workspaces-${session.user.id}`)
 }
 
 export interface ProjectWithWorkspace {

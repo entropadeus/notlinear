@@ -7,6 +7,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { createIssueEvent } from "@/lib/realtime/events"
+import { sql } from "drizzle-orm"
 
 export async function createIssue(
   projectId: string,
@@ -121,36 +122,27 @@ export async function getIssues(projectId?: string, workspaceId?: string): Promi
     return []
   }
 
-  let query = db.select().from(issues)
-
+  // Build where conditions
+  const conditions = [eq(workspaceMembers.userId, session.user.id)]
+  
   if (projectId) {
-    query = query.where(eq(issues.projectId, projectId)) as any
+    conditions.push(eq(issues.projectId, projectId))
   } else if (workspaceId) {
-    query = query.where(eq(issues.workspaceId, workspaceId)) as any
+    conditions.push(eq(issues.workspaceId, workspaceId))
   }
 
-  const allIssues = await query.orderBy(desc(issues.createdAt))
+  // Build query with JOIN to workspaceMembers to filter by access in a single query
+  const results = await db
+    .select({
+      issue: issues,
+    })
+    .from(issues)
+    .innerJoin(workspaceMembers, eq(workspaceMembers.workspaceId, issues.workspaceId))
+    .where(and(...conditions))
+    .orderBy(desc(issues.createdAt))
 
-  // Filter by workspace access
-  const accessibleIssues: Issue[] = []
-  for (const issue of allIssues) {
-    const [member] = await db
-      .select()
-      .from(workspaceMembers)
-      .where(
-        and(
-          eq(workspaceMembers.workspaceId, issue.workspaceId),
-          eq(workspaceMembers.userId, session.user.id)
-        )
-      )
-      .limit(1)
-
-    if (member) {
-      accessibleIssues.push(issue as Issue)
-    }
-  }
-
-  return accessibleIssues
+  // Extract issues from joined results
+  return results.map((r) => r.issue as Issue)
 }
 
 export async function getIssue(id: string) {
