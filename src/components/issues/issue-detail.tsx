@@ -9,7 +9,7 @@ import { motion } from "framer-motion"
 import { formatRelativeTime } from "@/lib/utils"
 import { ArrowLeft, UserCircle } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { updateIssue } from "@/lib/actions/issues"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
@@ -55,6 +55,12 @@ export function IssueDetail({ issue, workspaceSlug, initialComments = [], initia
   const [isUpdating, setIsUpdating] = useState(false)
 
   const currentAssignee = assigneeId !== "unassigned" ? members.find(m => m.id === assigneeId) : null
+
+  useEffect(() => {
+    setStatus(issue.status)
+    setPriority(issue.priority)
+    setAssigneeId(issue.assigneeId || "unassigned")
+  }, [issue.status, issue.priority, issue.assigneeId])
 
   // Generic field update handler to reduce repetition
   async function handleFieldUpdate<T extends string>(

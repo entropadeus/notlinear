@@ -4,13 +4,14 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { createComment, getComments } from "@/lib/actions/comments"
+import { createComment } from "@/lib/actions/comments"
 import { useToast } from "@/components/ui/use-toast"
 import { useSession } from "next-auth/react"
 import { formatRelativeTime } from "@/lib/utils"
 import ReactMarkdown from "react-markdown"
 import { motion, AnimatePresence } from "framer-motion"
 import { Send } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface Comment {
   id: string
@@ -32,23 +33,29 @@ interface CommentSectionProps {
 export function CommentSection({ issueId, initialComments }: CommentSectionProps) {
   const { data: session } = useSession()
   const { toast } = useToast()
+  const router = useRouter()
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [content, setContent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!content.trim() || !session) return
+  type CreateCommentResult = Comment & { issueStatusUpdated?: boolean }
+
+  const submitComment = async () => {
+    if (!content.trim() || !session || isSubmitting) return
 
     setIsSubmitting(true)
     try {
-      const newComment = await createComment(issueId, content)
-      setComments([newComment as any, ...comments])
+      const result = await createComment(issueId, content)
+      const { issueStatusUpdated, ...commentData } = result as CreateCommentResult
+      setComments((prev) => [commentData, ...prev])
       setContent("")
       toast({
         title: "Comment added",
         description: "Your comment has been posted",
       })
+      if (issueStatusUpdated) {
+        router.refresh()
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -58,6 +65,20 @@ export function CommentSection({ issueId, initialComments }: CommentSectionProps
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await submitComment()
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key !== "Enter" || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || e.nativeEvent.isComposing) {
+      return
+    }
+
+    e.preventDefault()
+    void submitComment()
   }
 
   return (
@@ -73,6 +94,7 @@ export function CommentSection({ issueId, initialComments }: CommentSectionProps
             placeholder="Add a comment..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            onKeyDown={handleKeyDown}
             rows={4}
           />
           <Button type="submit" disabled={isSubmitting || !content.trim()}>

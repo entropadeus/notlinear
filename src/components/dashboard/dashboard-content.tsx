@@ -13,6 +13,7 @@ import { ActivityChart } from "./activity-chart"
 import { ActivityHeatmap } from "./activity-heatmap"
 import { cn } from "@/lib/utils"
 import { useDashboardRealtime } from "@/lib/realtime/use-realtime"
+import { LiveDateTime } from "./live-date-time"
 
 interface Workspace {
   id: string
@@ -113,18 +114,21 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="mb-10"
       >
-        <div className="flex items-center gap-4 mb-2">
-          <Image
-            src="/NotLinear-icon.png"
-            alt="NotLinear"
-            width={40}
-            height={40}
-            className="rounded-xl"
-          />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, <span className="text-foreground font-medium">{userName}</span></p>
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-4">
+            <Image
+              src="/NotLinear-icon.png"
+              alt="NotLinear"
+              width={40}
+              height={40}
+              className="rounded-xl"
+            />
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+              <p className="text-muted-foreground">Welcome back, <span className="text-foreground font-medium">{userName}</span></p>
+            </div>
           </div>
+          <LiveDateTime />
         </div>
       </motion.div>
 

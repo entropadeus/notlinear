@@ -38,9 +38,10 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
     // Create a map for quick lookup
     const dataMap = new Map(data.data.map(d => [d.date, d]))
 
-    // Find the date range
-    const endDate = new Date()
-    const startDate = new Date()
+    // Find the date range - use local date to avoid timezone issues
+    const today = new Date()
+    const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate()) // Start of today in local time
+    const startDate = new Date(endDate)
     startDate.setDate(endDate.getDate() - 364)
 
     // Adjust start to the beginning of the week (Sunday)
@@ -66,7 +67,10 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
       }
 
       for (let day = 0; day < 7; day++) {
-        const dateStr = currentDate.toISOString().split("T")[0]
+        // Use local date formatting instead of UTC to avoid timezone issues
+        const dateStr = currentDate.getFullYear() + '-' +
+          String(currentDate.getMonth() + 1).padStart(2, '0') + '-' +
+          String(currentDate.getDate()).padStart(2, '0')
         const dayData = dataMap.get(dateStr)
 
         // Only include days within our actual range

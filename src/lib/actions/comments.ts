@@ -6,6 +6,12 @@ import { eq, and, desc } from "drizzle-orm"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { updateIssue } from "@/lib/actions/issues"
+
+function isCompletionComment(content: string): boolean {
+  const normalized = content.trim().toLowerCase().replace(/[.!?]+$/, "")
+  return normalized === "completed"
+}
 
 export async function createComment(issueId: string, content: string) {
   const session = await getServerSession(authOptions)
@@ -44,6 +50,19 @@ export async function createComment(issueId: string, content: string) {
     })
     .returning()
 
+  let issueStatusUpdated = false
+  let updatedIssueStatus: string | null = null
+
+  if (issue.status !== "done" && isCompletionComment(content)) {
+    try {
+      const updatedIssue = await updateIssue(issueId, { status: "done" })
+      issueStatusUpdated = true
+      updatedIssueStatus = updatedIssue.status
+    } catch (error) {
+      console.warn("Failed to mark issue done from comment", error)
+    }
+  }
+
   // Get author info to return with comment
   const [author] = await db
     .select({ name: users.name, image: users.image })
@@ -63,6 +82,8 @@ export async function createComment(issueId: string, content: string) {
   return {
     ...comment,
     author: author || { name: null, image: null },
+    issueStatusUpdated,
+    issueStatus: updatedIssueStatus,
   }
 }
 
