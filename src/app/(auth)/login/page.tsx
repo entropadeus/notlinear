@@ -90,9 +90,9 @@ export default function LoginPage() {
       <div className="relative z-10 flex w-full max-w-[420px] flex-col items-center">
         {/* Logo and branding */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="mb-10 flex flex-col items-center"
         >
           <motion.div
@@ -100,24 +100,26 @@ export default function LoginPage() {
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             className="relative"
           >
-            {/* Logo glow */}
-            <div
-              className="absolute inset-0 blur-2xl opacity-40"
-              style={{ background: "hsl(16 100% 50%)" }}
-            />
-            <Image
-              src="/notlinear-icon.png"
-              alt="NotLinear"
-              width={72}
-              height={72}
-              className="relative rounded-2xl"
-              priority
-            />
+            <div className="relative">
+              {/* Logo glow */}
+              <div
+                className="absolute inset-0 blur-2xl opacity-40"
+                style={{ background: "hsl(16 100% 50%)" }}
+              />
+              <Image
+                src="/notlinear-icon.png"
+                alt="NotLinear"
+                width={72}
+                height={72}
+                className="relative rounded-2xl"
+                priority
+              />
+            </div>
           </motion.div>
           <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            transition={{ delay: 0.05, duration: 0.35 }}
             className="mt-5 text-2xl font-semibold tracking-tight"
           >
             NotLinear
@@ -125,7 +127,7 @@ export default function LoginPage() {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
+            transition={{ delay: 0.1, duration: 0.35 }}
             className="mt-1 text-sm text-muted-foreground"
           >
             Sign in to continue
@@ -134,17 +136,17 @@ export default function LoginPage() {
 
         {/* Login form card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ delay: 0.08, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="w-full"
         >
           <div className="rounded-card border border-border/50 bg-card/80 p-8 shadow-card backdrop-blur-xl">
             <form onSubmit={handleSubmit} className="space-y-5">
               <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.12, duration: 0.3 }}
                 className="space-y-2"
               >
                 <Label htmlFor="email" className="text-sm font-medium">
@@ -162,9 +164,9 @@ export default function LoginPage() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.35, duration: 0.4 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.15, duration: 0.3 }}
                 className="space-y-2"
               >
                 <Label htmlFor="password" className="text-sm font-medium">
@@ -181,9 +183,9 @@ export default function LoginPage() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.4 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.18, duration: 0.3 }}
               >
                 <Button
                   type="submit"
@@ -208,7 +210,7 @@ export default function LoginPage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.45, duration: 0.4 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
               className="relative my-6"
             >
               <div className="absolute inset-0 flex items-center">
@@ -222,9 +224,9 @@ export default function LoginPage() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.22, duration: 0.3 }}
             >
               <Button
                 type="button"
@@ -248,7 +250,7 @@ export default function LoginPage() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
+          transition={{ delay: 0.25, duration: 0.35 }}
           className="mt-8 text-center text-sm text-muted-foreground"
         >
           Don&apos;t have an account?{" "}

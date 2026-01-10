@@ -5,6 +5,7 @@ import { issues, projects, workspaces, workspaceMembers, issueRevisions, comment
 import { eq, and, count, sql, gte, lte } from "drizzle-orm"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { unstable_cache } from "next/cache"
 
 export interface ProjectStats {
   projectId: string
@@ -81,58 +82,67 @@ export async function getWorkspaceStats(workspaceId: string): Promise<WorkspaceS
     return null
   }
 
-  const [member] = await db
-    .select()
-    .from(workspaceMembers)
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, workspaceId),
-        eq(workspaceMembers.userId, session.user.id)
-      )
-    )
-    .limit(1)
+  // Cache workspace stats for 2 minutes to reduce database load
+  const getCachedWorkspaceStats = unstable_cache(
+    async (workspaceId: string, userId: string) => {
+      const [member] = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.userId, userId)
+          )
+        )
+        .limit(1)
 
-  if (!member) {
-    return null
-  }
+      if (!member) {
+        return null
+      }
 
-  // Use COUNT aggregations instead of loading all rows
-  const [projectCount] = await db
-    .select({ count: count() })
-    .from(projects)
-    .where(eq(projects.workspaceId, workspaceId))
+      // Use COUNT aggregations instead of loading all rows
+      const [projectCount] = await db
+        .select({ count: count() })
+        .from(projects)
+        .where(eq(projects.workspaceId, workspaceId))
 
-  // Get issue counts by status using SQL aggregations
-  const issueStats = await db
-    .select({
-      status: issues.status,
-      count: count(),
-    })
-    .from(issues)
-    .where(eq(issues.workspaceId, workspaceId))
-    .groupBy(issues.status)
+      // Get issue counts by status using SQL aggregations
+      const issueStats = await db
+        .select({
+          status: issues.status,
+          count: count(),
+        })
+        .from(issues)
+        .where(eq(issues.workspaceId, workspaceId))
+        .groupBy(issues.status)
 
-  let totalIssues = 0
-  let completedIssues = 0
-  let openIssues = 0
+      let totalIssues = 0
+      let completedIssues = 0
+      let openIssues = 0
 
-  for (const row of issueStats) {
-    totalIssues += row.count
-    if (row.status === "done") {
-      completedIssues = row.count
-    }
-    if (row.status !== "done" && row.status !== "cancelled") {
-      openIssues += row.count
-    }
-  }
+      for (const row of issueStats) {
+        totalIssues += row.count
+        if (row.status === "done") {
+          completedIssues = row.count
+        }
+        if (row.status !== "done" && row.status !== "cancelled") {
+          openIssues += row.count
+        }
+      }
 
-  return {
-    workspaceId,
-    totalProjects: projectCount?.count || 0,
-    totalIssues,
-    completedIssues,
-    openIssues,
-  }
+      return {
+        workspaceId,
+        totalProjects: projectCount?.count || 0,
+        totalIssues,
+        completedIssues,
+        openIssues,
+      }
+    },
+    [`workspace-stats-${workspaceId}`],
+    { revalidate: 120 } // Cache for 2 minutes
+  )
+
+  return getCachedWorkspaceStats(workspaceId, session.user.id)
 }
 
 export async function getAllProjectsStats(workspaceId: string): Promise<Map<string, ProjectStats>> {
@@ -322,55 +332,58 @@ export async function getActivityTrend(days: number = 28): Promise<ActivityTrend
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - days)
 
-  const startTimestamp = Math.floor(startDate.getTime() / 1000)
-  const endTimestamp = Math.floor(endDate.getTime() / 1000)
+   const startTimestamp = Math.floor(startDate.getTime() / 1000)
+   const endTimestamp = Math.floor(endDate.getTime() / 1000)
 
-  // Get issue creation activity grouped by date
-  const issueActivity = await db
-    .select({
-      date: sql<string>`date(${issues.createdAt}, 'unixepoch')`.as('date'),
-      count: count(),
-    })
-    .from(issues)
-    .where(and(
-      workspaceFilter,
-      sql`${issues.createdAt} >= ${startTimestamp}`,
-      sql`${issues.createdAt} <= ${endTimestamp}`
-    ))
-    .groupBy(sql`date(${issues.createdAt}, 'unixepoch')`)
+   // Get all activity types in parallel for better performance
+   const [issueActivity, revisionActivity, commentActivity] = await Promise.all([
+     // Issue creation activity
+     db
+       .select({
+         date: sql<string>`date(${issues.createdAt}, 'unixepoch')`.as('date'),
+         count: count(),
+       })
+       .from(issues)
+       .where(and(
+         workspaceFilter,
+         sql`${issues.createdAt} >= ${startTimestamp}`,
+         sql`${issues.createdAt} <= ${endTimestamp}`
+       ))
+       .groupBy(sql`date(${issues.createdAt}, 'unixepoch')`),
 
-  // Get revision activity grouped by date
-  const revisionActivity = await db
-    .select({
-      date: sql<string>`date(${issueRevisions.createdAt}, 'unixepoch')`.as('date'),
-      count: count(),
-    })
-    .from(issueRevisions)
-    .innerJoin(issues, eq(issueRevisions.issueId, issues.id))
-    .where(and(
-      workspaceFilter,
-      sql`${issueRevisions.createdAt} >= ${startTimestamp}`,
-      sql`${issueRevisions.createdAt} <= ${endTimestamp}`
-    ))
-    .groupBy(sql`date(${issueRevisions.createdAt}, 'unixepoch')`)
+     // Revision activity
+     db
+       .select({
+         date: sql<string>`date(${issueRevisions.createdAt}, 'unixepoch')`.as('date'),
+         count: count(),
+       })
+       .from(issueRevisions)
+       .innerJoin(issues, eq(issueRevisions.issueId, issues.id))
+       .where(and(
+         workspaceFilter,
+         sql`${issueRevisions.createdAt} >= ${startTimestamp}`,
+         sql`${issueRevisions.createdAt} <= ${endTimestamp}`
+       ))
+       .groupBy(sql`date(${issueRevisions.createdAt}, 'unixepoch')`),
 
-  // Get comment activity grouped by date
-  const commentActivity = await db
-    .select({
-      date: sql<string>`date(${comments.createdAt}, 'unixepoch')`.as('date'),
-      count: count(),
-    })
-    .from(comments)
-    .innerJoin(issues, eq(comments.issueId, issues.id))
-    .where(and(
-      workspaceFilter,
-      sql`${comments.createdAt} >= ${startTimestamp}`,
-      sql`${comments.createdAt} <= ${endTimestamp}`
-    ))
-    .groupBy(sql`date(${comments.createdAt}, 'unixepoch')`)
+     // Comment activity
+     db
+       .select({
+         date: sql<string>`date(${comments.createdAt}, 'unixepoch')`.as('date'),
+         count: count(),
+       })
+       .from(comments)
+       .innerJoin(issues, eq(comments.issueId, issues.id))
+       .where(and(
+         workspaceFilter,
+         sql`${comments.createdAt} >= ${startTimestamp}`,
+         sql`${comments.createdAt} <= ${endTimestamp}`
+       ))
+       .groupBy(sql`date(${comments.createdAt}, 'unixepoch')`)
+   ])
 
-  // Merge all activity into a single map
-  const activityMap = new Map<string, number>()
+   // Merge all activity into a single map
+   const activityMap = new Map<string, number>()
 
   // Initialize all dates with 0
   for (let i = 0; i < days; i++) {

@@ -229,7 +229,7 @@ export default function HomePage() {
       {/* Floating cards */}
       <div className="absolute inset-0 hidden lg:block">
         <FloatingCard
-          delay={0.8}
+          delay={0.3}
           x={5}
           y={20}
           rotate={-6}
@@ -239,7 +239,7 @@ export default function HomePage() {
           identifier="PROJ-142"
         />
         <FloatingCard
-          delay={1.0}
+          delay={0.4}
           x={75}
           y={15}
           rotate={4}
@@ -249,7 +249,7 @@ export default function HomePage() {
           identifier="PROJ-156"
         />
         <FloatingCard
-          delay={1.2}
+          delay={0.5}
           x={70}
           y={60}
           rotate={-3}
@@ -264,9 +264,9 @@ export default function HomePage() {
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-20">
         {/* Badge */}
         <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="mb-8"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border/50 bg-card/50 backdrop-blur-sm">
@@ -280,27 +280,29 @@ export default function HomePage() {
 
         {/* Logo */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.6, ease: [0.19, 1, 0.22, 1] }}
+          transition={{ delay: 0.05, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="relative mb-6"
         >
-          <div className="absolute inset-0 blur-3xl bg-primary/30 rounded-full scale-150" />
-          <Image
-            src="/NotLinear-icon.png"
-            alt="NotLinear"
-            width={80}
-            height={80}
-            className="relative rounded-2xl shadow-2xl logo-glow"
-          />
+          <div className="relative">
+            <div className="absolute inset-0 blur-3xl bg-primary/30 rounded-full scale-150" />
+            <Image
+              src="/NotLinear-icon.png"
+              alt="NotLinear"
+              width={80}
+              height={80}
+              className="relative rounded-2xl shadow-2xl logo-glow"
+            />
+          </div>
         </motion.div>
 
         {/* Headline */}
         <motion.div className="text-center max-w-4xl mx-auto mb-6">
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.7, ease: [0.19, 1, 0.22, 1] }}
+            transition={{ delay: 0.1, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="text-6xl sm:text-7xl lg:text-8xl font-heading font-bold tracking-tight mb-6"
           >
             <span className="text-foreground">Ship</span>
@@ -310,9 +312,9 @@ export default function HomePage() {
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6, ease: [0.19, 1, 0.22, 1] }}
+            transition={{ delay: 0.15, duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
           >
             The <span className="text-foreground">open source</span> Linear alternative.
@@ -324,9 +326,9 @@ export default function HomePage() {
 
         {/* CTA Buttons */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
           className="flex flex-col sm:flex-row gap-4 mb-16"
         >
           <Link href="/register">
@@ -353,13 +355,13 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
+          transition={{ delay: 0.3 }}
           className="w-full max-w-5xl mx-auto"
         >
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.3 }}
+            transition={{ delay: 0.35 }}
             className="text-center text-2xl font-semibold mb-10 text-foreground"
           >
             Everything you need to ship
@@ -370,25 +372,25 @@ export default function HomePage() {
               icon={Code2}
               title="Fully open source"
               description="No vendor lock-in. Self-host on your infra, audit the code, contribute features. Your data, your rules."
-              delay={1.4}
+              delay={0.4}
             />
             <FeatureCard
               icon={Zap}
               title="Lightning fast"
               description="Optimistic updates and keyboard shortcuts for instant feedback. Built for speed demons."
-              delay={1.5}
+              delay={0.45}
             />
             <FeatureCard
               icon={GitBranch}
               title="GitHub native"
               description="Link commits and PRs automatically. See code changes alongside your issues."
-              delay={1.6}
+              delay={0.5}
             />
             <FeatureCard
               icon={Users}
               title="Real-time collab"
               description="See who's online, get instant updates. Collaboration without the refresh button."
-              delay={1.7}
+              delay={0.55}
             />
           </div>
         </motion.div>
@@ -400,7 +402,7 @@ export default function HomePage() {
         <motion.footer
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 2 }}
+          transition={{ delay: 0.6 }}
           className="absolute bottom-6 left-0 right-0 text-center"
         >
           <p className="text-sm text-muted-foreground">

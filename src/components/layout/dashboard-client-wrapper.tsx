@@ -3,7 +3,9 @@
 import { Sidebar } from "@/components/layout/sidebar"
 import { CommandPalette } from "@/components/command-palette"
 import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog"
-import { motion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
+import { usePathname } from "next/navigation"
+import { useNavigation } from "@/components/providers/navigation-provider"
 import type { Session } from "next-auth"
 
 interface DashboardClientWrapperProps {
@@ -11,18 +13,39 @@ interface DashboardClientWrapperProps {
   session: Session | null
 }
 
+const CONTENT_TRANSITION = {
+  duration: 0.2,
+  ease: [0.32, 0.72, 0, 1] as [number, number, number, number],
+}
+
+const FADE_OUT_TRANSITION = {
+  duration: 0.12,
+  ease: "easeOut" as const,
+}
+
 export function DashboardClientWrapper({ children, session }: DashboardClientWrapperProps) {
+  const pathname = usePathname()
+  const { isNavigating } = useNavigation()
+
   return (
     <div className="flex min-h-screen">
+      {/* Sidebar stays static - no transition */}
       <Sidebar session={session} />
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="flex-1 overflow-auto"
-      >
-        {children}
-      </motion.main>
+
+      {/* Main content transitions between pages */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.main
+          key={pathname}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isNavigating ? 0.4 : 1 }}
+          exit={{ opacity: 0 }}
+          transition={isNavigating ? FADE_OUT_TRANSITION : CONTENT_TRANSITION}
+          className="flex-1 overflow-auto"
+        >
+          {children}
+        </motion.main>
+      </AnimatePresence>
+
       <CommandPalette />
       <KeyboardShortcutsDialog />
     </div>

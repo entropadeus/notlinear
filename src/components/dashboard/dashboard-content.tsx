@@ -109,20 +109,22 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="mb-10"
       >
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-4">
-            <Image
-              src="/NotLinear-icon.png"
-              alt="NotLinear"
-              width={40}
-              height={40}
-              className="rounded-xl"
-            />
+            <div className="relative">
+              <Image
+                src="/NotLinear-icon.png"
+                alt="NotLinear"
+                width={40}
+                height={40}
+                className="rounded-xl"
+              />
+            </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
               <p className="text-muted-foreground">Welcome back, <span className="text-foreground font-medium">{userName}</span></p>
@@ -135,9 +137,9 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
       {/* Quick Stats Overview */}
       {workspaces.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
+          transition={{ delay: 0.05, duration: 0.35 }}
           className="mb-10"
         >
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -146,9 +148,9 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
               return (
                 <motion.div
                   key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
+                  transition={{ delay: 0.08 + index * 0.03 }}
                 >
                   <Card className={cn(
                     "overflow-hidden hover-lift border-border/50",
@@ -179,9 +181,9 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
             {/* Overall Progress */}
             {totals.totalIssues > 0 && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 }}
+                transition={{ delay: 0.15 }}
               >
                 <Card className="overflow-hidden border-border/50 h-full">
                   <CardContent className="py-5">
@@ -286,7 +288,7 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.25 }}
+        transition={{ delay: 0.1 }}
         className="mb-5"
       >
         <div className="section-header">
@@ -300,7 +302,7 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.4 }}
+        transition={{ delay: 0.12, duration: 0.35 }}
         className="grid gap-5 md:grid-cols-2 lg:grid-cols-3"
       >
         {workspaces.map((workspace, index) => {
@@ -312,9 +314,9 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
           return (
             <motion.div
               key={workspace.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 + index * 0.06, duration: 0.4 }}
+              transition={{ delay: 0.14 + index * 0.04, duration: 0.35 }}
             >
               <Link href={`/w/${workspace.slug}`}>
                 <Card className="group card-premium h-full hover-lift cursor-pointer border-border/50 overflow-hidden">
@@ -369,9 +371,9 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
       {/* Empty State */}
       {workspaces.length === 0 && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.1 }}
           className="flex flex-col items-center justify-center py-16"
         >
           <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center mb-5">

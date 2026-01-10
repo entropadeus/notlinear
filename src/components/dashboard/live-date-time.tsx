@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, memo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 
@@ -54,10 +54,14 @@ function getTimeParts(date: Date) {
   }
 }
 
-export function LiveDateTime() {
-  const [currentTime, setCurrentTime] = useState(new Date())
+export const LiveDateTime = memo(function LiveDateTime() {
+  // Start with null to avoid hydration mismatch - time only renders client-side
+  const [currentTime, setCurrentTime] = useState<Date | null>(null)
 
   useEffect(() => {
+    // Set initial time on mount (client-side only)
+    setCurrentTime(new Date())
+
     const timer = setInterval(() => {
       setCurrentTime(new Date())
     }, 1000)
@@ -81,6 +85,16 @@ export function LiveDateTime() {
       minute: "2-digit",
       second: "2-digit",
     })
+  }
+
+  // Show placeholder during SSR to avoid hydration mismatch
+  if (!currentTime) {
+    return (
+      <div className="flex flex-col items-end text-right">
+        <div className="text-sm font-medium text-foreground h-5 w-48 bg-muted/30 rounded animate-pulse" />
+        <div className="text-lg font-mono font-semibold h-6 w-32 bg-muted/20 rounded animate-pulse mt-1" />
+      </div>
+    )
   }
 
   const timeParts = getTimeParts(currentTime)
@@ -116,4 +130,4 @@ export function LiveDateTime() {
       </div>
     </div>
   )
-}
+})
