@@ -186,7 +186,7 @@ export function ActivityChart({ distribution, activityTrend }: ActivityChartProp
                   {/* Percentage label for larger segments */}
                   {segment.percentage > 12 && (
                     <motion.span
-                      className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white/90 drop-shadow-sm"
+                      className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-black dark:text-white drop-shadow-sm"
                       initial={{ opacity: 0 }}
                       animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                       transition={{ delay: 1 + index * 0.1 }}

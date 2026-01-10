@@ -677,7 +677,7 @@ export async function getMostActiveProject(): Promise<MostActiveProject | null> 
     return {
       id: projectData.id,
       name: projectData.name,
-      identifier: projectData.identifier,
+      identifier: projectData.name, // Projects don't have identifiers like issues, use name
       workspaceName: workspace?.name || "Unknown",
       issueCount: topStats.total,
       openIssues: topStats.open,

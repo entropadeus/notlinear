@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { issues, projects, workspaces, workspaceMembers, issueRevisions } from "@/lib/db/schema"
+import { issues, projects, workspaces, workspaceMembers, issueRevisions, users } from "@/lib/db/schema"
 import { eq, and, desc, asc } from "drizzle-orm"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -69,13 +69,19 @@ export async function createIssue(
   const projectName = project.name.toUpperCase().replace(/\s+/g, "").substring(0, 4)
   const identifier = `${projectName}-${issueNumber}`
 
+  // Get max position for the status to place new issue at the end
+  const [{ maxPosition }] = await db
+    .select({ maxPosition: sql<number>`MAX(${issues.position})` })
+    .from(issues)
+    .where(and(eq(issues.projectId, projectId), eq(issues.status, status)))
+
   // Update project counter
   await db
     .update(projects)
     .set({ issueCounter: issueNumber })
     .where(eq(projects.id, projectId))
 
-  const [issue] = await db
+  const result = await db
     .insert(issues)
     .values({
       identifier,
@@ -87,8 +93,13 @@ export async function createIssue(
       workspaceId: project.workspaceId,
       assigneeId,
       parentId,
+      position: (maxPosition || 0) + 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     })
     .returning()
+
+  const issue = (result as any)[0]
 
   const workspace = await db
     .select()
@@ -138,7 +149,7 @@ export async function getIssues(projectId?: string, workspaceId?: string): Promi
 
   // Build where conditions
   const conditions = [eq(workspaceMembers.userId, session.user.id)]
-  
+
   if (projectId) {
     conditions.push(eq(issues.projectId, projectId))
   } else if (workspaceId) {
@@ -157,6 +168,46 @@ export async function getIssues(projectId?: string, workspaceId?: string): Promi
 
   // Extract issues from joined results
   return results.map((r) => r.issue as Issue)
+}
+
+// Optimized version that includes assignee data to prevent N+1 queries
+export async function getIssuesWithAssignees(projectId?: string, workspaceId?: string): Promise<(Issue & { assignee?: { id: string; name: string; email: string; image: string | null } | null })[]> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return []
+  }
+
+  // Build where conditions
+  const conditions = [eq(workspaceMembers.userId, session.user.id)]
+
+  if (projectId) {
+    conditions.push(eq(issues.projectId, projectId))
+  } else if (workspaceId) {
+    conditions.push(eq(issues.workspaceId, workspaceId))
+  }
+
+  // Build query with LEFT JOIN to include assignee data
+  const results = await db
+    .select({
+      issue: issues,
+      assignee: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        image: users.image,
+      },
+    })
+    .from(issues)
+    .innerJoin(workspaceMembers, eq(workspaceMembers.workspaceId, issues.workspaceId))
+    .leftJoin(users, eq(issues.assigneeId, users.id))
+    .where(and(...conditions))
+    .orderBy(desc(issues.createdAt))
+
+  // Transform results to include assignee data
+  return results.map((r) => ({
+    ...r.issue,
+    assignee: r.assignee || null,
+  })) as (Issue & { assignee?: { id: string; name: string; email: string; image: string | null } | null })[]
 }
 
 export async function getIssue(id: string) {
@@ -245,11 +296,13 @@ export async function updateIssue(
     updatedAt: new Date(),
   }
 
-  const [updated] = await db
+  const result = await db
     .update(issues)
     .set(updateData)
     .where(eq(issues.id, id))
     .returning()
+
+  const updated = (result as any)[0]
 
   // Create revisions for all changes
   if (changes.length > 0) {
@@ -382,11 +435,13 @@ export async function updateIssuePosition(
   }
 
   // Update the main issue
-  const [updated] = await db
+  const result = await db
     .update(issues)
     .set(updateData)
     .where(eq(issues.id, id))
     .returning()
+
+  const updated = (result as any)[0]
 
   // Track status change in revision history
   if (newStatus !== issue.status) {

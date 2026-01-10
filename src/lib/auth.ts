@@ -9,11 +9,11 @@ import bcrypt from "bcryptjs"
 
 export const authOptions: NextAuthOptions = {
   adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }) as any,
+    usersTable: users as any,
+    accountsTable: accounts as any,
+    sessionsTable: sessions as any,
+    verificationTokensTable: verificationTokens as any,
+  }),
   providers: [
     GitHubProvider({
       clientId: process.env.GITHUB_CLIENT_ID || "",

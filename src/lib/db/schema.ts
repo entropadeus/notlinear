@@ -92,7 +92,7 @@ export const labels = sqliteTable("labels", {
 });
 
 // Issues
-export const issues = sqliteTable("issues", {
+export const issues: any = sqliteTable("issues", {
   id: text("id").primaryKey().$defaultFn(generateId),
   identifier: text("identifier").notNull(), // PROJ-123 format
   title: text("title").notNull(),
