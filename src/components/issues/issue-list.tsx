@@ -8,6 +8,7 @@ import { motion } from "framer-motion"
 import { formatRelativeTime, cn } from "@/lib/utils"
 import { Circle, CheckCircle2, Clock, Archive, XCircle, Loader2, ListTodo, ArrowRight, type LucideIcon } from "lucide-react"
 import { STATUS_DISPLAY_CONFIG, PRIORITY_DISPLAY_CONFIG, type IssueStatus, type IssuePriority } from "@/lib/filters/types"
+import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation"
 
 interface Member {
   id: string
@@ -20,6 +21,11 @@ interface IssueListProps {
   issues: Issue[]
   workspaceSlug: string
   members?: Member[]
+  onCreateNew?: () => void
+  onStatusChange?: (id: string, status: string) => void
+  onAssignToMe?: (id: string) => void
+  onChangePriority?: (id: string) => void
+  onDelete?: (id: string) => void
 }
 
 // Map status to icon - icons cannot be serialized in types.ts
@@ -32,11 +38,22 @@ const STATUS_ICONS: Record<IssueStatus, LucideIcon> = {
   cancelled: XCircle,
 }
 
-export function IssueList({ issues, workspaceSlug, members = [] }: IssueListProps) {
+export function IssueList({ issues, workspaceSlug, members = [], onCreateNew, onStatusChange, onAssignToMe, onChangePriority, onDelete }: IssueListProps) {
   const getAssignee = (assigneeId: string | null) => {
     if (!assigneeId) return null
     return members.find(m => m.id === assigneeId)
   }
+
+  const { selectedIndex, selectedItem, isNavigating } = useKeyboardNavigation({
+    items: issues,
+    workspaceSlug,
+    onCreateNew,
+    onStatusChange,
+    onAssignToMe,
+    onChangePriority,
+    onDelete,
+    enabled: issues.length > 0,
+  })
 
   return (
     <div className="space-y-2">
@@ -56,7 +73,13 @@ export function IssueList({ issues, workspaceSlug, members = [] }: IssueListProp
             transition={{ delay: index * 0.04, duration: 0.3 }}
           >
             <Link href={`/w/${workspaceSlug}/issue/${issue.identifier}`}>
-              <Card className="group transition-all border-border/50 hover:border-border hover:shadow-card-hover cursor-pointer overflow-hidden">
+              <Card
+                data-issue-index={index}
+                className={cn(
+                  "group transition-all border-border/50 hover:border-border hover:shadow-card-hover cursor-pointer overflow-hidden",
+                  selectedIndex === index && isNavigating && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                )}
+              >
                 <CardContent className="flex items-center gap-4 p-4">
                   <div className={cn("p-2 rounded-lg", statusConfig.bgClass)}>
                     <StatusIcon className={cn("h-4 w-4", statusConfig.color)} />

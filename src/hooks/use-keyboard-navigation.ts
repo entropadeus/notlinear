@@ -8,6 +8,14 @@ export interface KeyboardNavigationOptions {
   workspaceSlug: string
   onCreateNew?: () => void
   onStatusChange?: (id: string, status: string) => void
+  onEdit?: (id: string) => void
+  onDelete?: (id: string) => void
+  onDuplicate?: (id: string) => void
+  onAssignToMe?: (id: string) => void
+  onChangePriority?: (id: string) => void
+  onViewBoard?: () => void
+  onViewList?: () => void
+  onSearch?: () => void
   enabled?: boolean
 }
 
@@ -25,6 +33,9 @@ export function useKeyboardNavigation({
   workspaceSlug,
   onCreateNew,
   onStatusChange,
+  onAssignToMe,
+  onChangePriority,
+  onDelete,
   enabled = true,
 }: KeyboardNavigationOptions) {
   const [selectedIndex, setSelectedIndex] = useState<number>(-1)
@@ -131,6 +142,28 @@ export function useKeyboardNavigation({
           }
           break
 
+        case "a":
+          if (selectedItem && onAssignToMe && !e.metaKey && !e.ctrlKey) {
+            e.preventDefault()
+            onAssignToMe(selectedItem.id)
+          }
+          break
+
+        case "p":
+          if (selectedItem && onChangePriority && !e.metaKey && !e.ctrlKey) {
+            e.preventDefault()
+            onChangePriority(selectedItem.id)
+          }
+          break
+
+        case "Delete":
+        case "Backspace":
+          if (selectedItem && onDelete && !e.metaKey && !e.ctrlKey) {
+            e.preventDefault()
+            onDelete(selectedItem.id)
+          }
+          break
+
         case "g":
           // 'g' followed by another key for go-to commands
           // We'll handle this in a future iteration
@@ -178,6 +211,9 @@ export function useKeyboardNavigation({
     selectedItem,
     onCreateNew,
     onStatusChange,
+    onAssignToMe,
+    onChangePriority,
+    onDelete,
     items.length,
   ])
 

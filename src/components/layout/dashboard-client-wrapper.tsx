@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/layout/sidebar"
 import { CommandPalette } from "@/components/command-palette"
+import { KeyboardShortcutsDialog } from "@/components/keyboard-shortcuts-dialog"
 import { motion } from "framer-motion"
 import type { Session } from "next-auth"
 
@@ -23,6 +24,7 @@ export function DashboardClientWrapper({ children, session }: DashboardClientWra
         {children}
       </motion.main>
       <CommandPalette />
+      <KeyboardShortcutsDialog />
     </div>
   )
 }

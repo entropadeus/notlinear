@@ -62,6 +62,28 @@ export function ProjectContent({ project, issues, workspaceSlug, projectId, work
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [viewMode, setViewMode] = useLocalStorage<ViewMode>(`project-view-${projectId}`, "list")
 
+  const handleCreateNew = () => setShowCreateIssue(true)
+
+  const handleStatusChange = async (issueId: string, status: string) => {
+    // TODO: Implement status change logic
+    console.log("Status change:", issueId, status)
+  }
+
+  const handleAssignToMe = async (issueId: string) => {
+    // TODO: Implement assign to me logic
+    console.log("Assign to me:", issueId)
+  }
+
+  const handleChangePriority = async (issueId: string) => {
+    // TODO: Implement priority change logic
+    console.log("Change priority:", issueId)
+  }
+
+  const handleDelete = async (issueId: string) => {
+    // TODO: Implement delete logic
+    console.log("Delete issue:", issueId)
+  }
+
   const completionRate = projectStats && projectStats.totalIssues > 0
     ? Math.round((projectStats.done / projectStats.totalIssues) * 100)
     : 0
@@ -268,9 +290,27 @@ export function ProjectContent({ project, issues, workspaceSlug, projectId, work
           transition={{ delay: 0.25 }}
         >
           {viewMode === "list" ? (
-            <IssueList issues={issues} workspaceSlug={workspaceSlug} members={members} />
+            <IssueList
+              issues={issues}
+              workspaceSlug={workspaceSlug}
+              members={members}
+              onCreateNew={handleCreateNew}
+              onStatusChange={handleStatusChange}
+              onAssignToMe={handleAssignToMe}
+              onChangePriority={handleChangePriority}
+              onDelete={handleDelete}
+            />
           ) : (
-            <IssueGrid issues={issues} workspaceSlug={workspaceSlug} members={members} />
+            <IssueGrid
+              issues={issues}
+              workspaceSlug={workspaceSlug}
+              members={members}
+              onCreateNew={handleCreateNew}
+              onStatusChange={handleStatusChange}
+              onAssignToMe={handleAssignToMe}
+              onChangePriority={handleChangePriority}
+              onDelete={handleDelete}
+            />
           )}
         </motion.div>
       </div>

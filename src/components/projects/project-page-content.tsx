@@ -22,6 +22,30 @@ interface ProjectPageContentProps {
 }
 
 export function ProjectPageContent({ project, issues, workspaceSlug, projectId }: ProjectPageContentProps) {
+  const handleCreateNew = () => {
+    // TODO: Implement create new issue
+    console.log("Create new issue")
+  }
+
+  const handleStatusChange = async (issueId: string, status: string) => {
+    // TODO: Implement status change logic
+    console.log("Status change:", issueId, status)
+  }
+
+  const handleAssignToMe = async (issueId: string) => {
+    // TODO: Implement assign to me logic
+    console.log("Assign to me:", issueId)
+  }
+
+  const handleChangePriority = async (issueId: string) => {
+    // TODO: Implement priority change logic
+    console.log("Change priority:", issueId)
+  }
+
+  const handleDelete = async (issueId: string) => {
+    // TODO: Implement delete logic
+    console.log("Delete issue:", issueId)
+  }
   return (
     <div className="flex h-screen">
       <div className="flex-1 overflow-auto p-8">
@@ -54,7 +78,15 @@ export function ProjectPageContent({ project, issues, workspaceSlug, projectId }
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
         >
-          <IssueList issues={issues} workspaceSlug={workspaceSlug} />
+          <IssueList
+            issues={issues}
+            workspaceSlug={workspaceSlug}
+            onCreateNew={handleCreateNew}
+            onStatusChange={handleStatusChange}
+            onAssignToMe={handleAssignToMe}
+            onChangePriority={handleChangePriority}
+            onDelete={handleDelete}
+          />
         </motion.div>
       </div>
     </div>

@@ -23,13 +23,21 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: ["End"], description: "Go to last item" },
     ],
   },
-  {
-    title: "Actions",
-    shortcuts: [
-      { keys: ["c"], description: "Create new issue" },
-      { keys: ["⌘", "K"], description: "Open command palette" },
-    ],
-  },
+   {
+     title: "Actions",
+     shortcuts: [
+       { keys: ["c"], description: "Create new issue" },
+       { keys: ["⌘", "K"], description: "Open command palette" },
+     ],
+   },
+   {
+     title: "Issue Actions (with item selected)",
+     shortcuts: [
+       { keys: ["A"], description: "Assign to me" },
+       { keys: ["P"], description: "Change priority" },
+       { keys: ["Delete"], description: "Delete issue" },
+     ],
+   },
   {
     title: "Quick Status (with item selected)",
     shortcuts: [
