@@ -480,10 +480,10 @@ export async function getActivityHeatmapData(): Promise<ActivityHeatmapData> {
     ? eq(issues.workspaceId, workspaceIds[0])
     : sql`${issues.workspaceId} IN (${sql.join(workspaceIds.map(id => sql`${id}`), sql`, `)})`
 
-  // Calculate date range - 365 days back, using local dates to avoid timezone issues
+  // Calculate date range - 365 days back, using UTC to match SQL date() function
   const today = new Date()
-  const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999) // End of today in local time
-  const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 364) // 364 days ago (to include 365 days total)
+  const endDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999))
+  const startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - 364))
 
   const startTimestamp = Math.floor(startDate.getTime() / 1000)
   const endTimestamp = Math.floor(endDate.getTime() / 1000)
@@ -535,13 +535,13 @@ export async function getActivityHeatmapData(): Promise<ActivityHeatmapData> {
   // Merge all activity into a single map
   const activityMap = new Map<string, number>()
 
-  // Initialize all dates with 0 - use local dates to match frontend
+  // Initialize all dates with 0 - use UTC dates to match frontend
   for (let i = 0; i <= 364; i++) {
     const date = new Date(startDate)
-    date.setDate(startDate.getDate() + i)
-    const dateStr = date.getFullYear() + '-' +
-      String(date.getMonth() + 1).padStart(2, '0') + '-' +
-      String(date.getDate()).padStart(2, '0')
+    date.setUTCDate(startDate.getUTCDate() + i)
+    const dateStr = date.getUTCFullYear() + '-' +
+      String(date.getUTCMonth() + 1).padStart(2, '0') + '-' +
+      String(date.getUTCDate()).padStart(2, '0')
     activityMap.set(dateStr, 0)
   }
 

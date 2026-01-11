@@ -38,15 +38,15 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
     // Create a map for quick lookup
     const dataMap = new Map(data.data.map(d => [d.date, d]))
 
-    // Find the date range - use local date to avoid timezone issues
+    // Find the date range - use UTC dates to match server/database timezone
     const today = new Date()
-    const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate()) // Start of today in local time
+    const endDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
     const startDate = new Date(endDate)
-    startDate.setDate(endDate.getDate() - 364)
+    startDate.setUTCDate(endDate.getUTCDate() - 364)
 
     // Adjust start to the beginning of the week (Sunday)
-    const startDayOfWeek = startDate.getDay()
-    startDate.setDate(startDate.getDate() - startDayOfWeek)
+    const startDayOfWeek = startDate.getUTCDay()
+    startDate.setUTCDate(startDate.getUTCDate() - startDayOfWeek)
 
     const weeks: WeekData[] = []
     const monthLabels: { month: string; weekIndex: number }[] = []
@@ -58,19 +58,19 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
       const weekStart = new Date(currentDate)
 
       // Check if we need a month label
-      if (currentDate.getMonth() !== lastMonth) {
+      if (currentDate.getUTCMonth() !== lastMonth) {
         monthLabels.push({
-          month: MONTHS[currentDate.getMonth()],
+          month: MONTHS[currentDate.getUTCMonth()],
           weekIndex: weeks.length,
         })
-        lastMonth = currentDate.getMonth()
+        lastMonth = currentDate.getUTCMonth()
       }
 
       for (let day = 0; day < 7; day++) {
-        // Use local date formatting instead of UTC to avoid timezone issues
-        const dateStr = currentDate.getFullYear() + '-' +
-          String(currentDate.getMonth() + 1).padStart(2, '0') + '-' +
-          String(currentDate.getDate()).padStart(2, '0')
+        // Use UTC date formatting to match server/database timezone
+        const dateStr = currentDate.getUTCFullYear() + '-' +
+          String(currentDate.getUTCMonth() + 1).padStart(2, '0') + '-' +
+          String(currentDate.getUTCDate()).padStart(2, '0')
         const dayData = dataMap.get(dateStr)
 
         // Only include days within our actual range
@@ -80,7 +80,7 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
           weekDays.push(null)
         }
 
-        currentDate.setDate(currentDate.getDate() + 1)
+        currentDate.setUTCDate(currentDate.getUTCDate() + 1)
       }
 
       weeks.push({ days: weekDays, weekStart })
