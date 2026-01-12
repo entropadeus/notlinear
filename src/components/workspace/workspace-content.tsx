@@ -16,6 +16,7 @@ import { useState } from "react"
 import { CreateProjectDialog } from "./create-project-dialog"
 import { EditWorkspaceDialog } from "./edit-workspace-dialog"
 import { TeamManagementDialog } from "./team-management-dialog"
+import { ActiveUsersIndicator } from "./active-users-indicator"
 import { WorkspaceStatsCard } from "@/components/stats/workspace-stats-card"
 import { ProjectStatsCard } from "@/components/stats/project-stats-card"
 import { WorkspaceStats, ProjectStats } from "@/lib/actions/stats"
@@ -84,7 +85,9 @@ export function WorkspaceContent({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          <ActiveUsersIndicator workspaceId={workspace.id} />
+          <div className="h-6 w-px bg-border/50" />
           <Button onClick={() => setShowCreateProject(true)} className="btn-premium text-primary-foreground font-semibold">
             <Plus className="mr-2 h-4 w-4" />
             New Project

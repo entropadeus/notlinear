@@ -51,22 +51,28 @@ export async function GET(request: Request) {
 
   const stream = new ReadableStream({
     start(controller) {
-      // Register the connection
+      // Register the connection with user details
       connection = {
         id: connectionId,
         userId: session.user!.id!,
+        userName: session.user!.name || undefined,
+        userImage: session.user!.image,
         workspaceId,
         controller,
         createdAt: Date.now(),
       }
       eventBus.addConnection(connection)
 
-      // Send initial connection event
+      // Get existing online users before we broadcast our join
+      const existingUsers = eventBus.getWorkspaceUsersWithDetails(workspaceId)
+
+      // Send initial connection event with existing online users
       const initEvent = JSON.stringify({
         type: "connected",
         connectionId,
         workspaceId,
         timestamp: Date.now(),
+        onlineUsers: existingUsers,
       })
       controller.enqueue(new TextEncoder().encode(`data: ${initEvent}\n\n`))
 

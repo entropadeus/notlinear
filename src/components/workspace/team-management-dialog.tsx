@@ -115,6 +115,7 @@ export function TeamManagementDialog({
 
   // Copied state
   const [copiedToken, setCopiedToken] = useState<string | null>(null)
+  const [showLinkFor, setShowLinkFor] = useState<string | null>(null)
 
   // Confirmation dialogs
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null)
@@ -177,11 +178,8 @@ export function TeamManagementDialog({
   }
 
   function copyInviteLink(token: string) {
-    const link = `${window.location.origin}/join/${token}`
-    navigator.clipboard.writeText(link)
-    setCopiedToken(token)
-    setTimeout(() => setCopiedToken(null), 2000)
-    toast({ title: "Invite link copied to clipboard" })
+    // Always show the link for manual copy - clipboard APIs are unreliable over HTTP
+    setShowLinkFor(showLinkFor === token ? null : token)
   }
 
   function handleRevokeInvite() {
@@ -530,6 +528,38 @@ export function TeamManagementDialog({
                                 </Button>
                               </div>
                             </div>
+                            {showLinkFor === invite.token && (
+                              <div className="mt-2 flex gap-2">
+                                <Input
+                                  readOnly
+                                  value={`${window.location.origin}/join/${invite.token}`}
+                                  className="text-xs font-mono flex-1"
+                                  onFocus={(e) => e.target.select()}
+                                  autoFocus
+                                />
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={async () => {
+                                    const link = `${window.location.origin}/join/${invite.token}`
+                                    try {
+                                      await navigator.clipboard.writeText(link)
+                                      setCopiedToken(invite.token)
+                                      setTimeout(() => setCopiedToken(null), 2000)
+                                      toast({ title: "Copied!" })
+                                    } catch {
+                                      toast({ title: "Use Ctrl+C to copy", variant: "default" })
+                                    }
+                                  }}
+                                >
+                                  {copiedToken === invite.token ? (
+                                    <Check className="h-4 w-4" />
+                                  ) : (
+                                    <Copy className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
+                            )}
                           </motion.div>
                         )
                       })}

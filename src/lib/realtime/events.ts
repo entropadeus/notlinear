@@ -29,6 +29,8 @@ export interface RealtimeEvent {
 export interface SSEConnection {
   id: string
   userId: string
+  userName?: string
+  userImage?: string | null
   workspaceId: string
   controller: ReadableStreamDefaultController<Uint8Array>
   createdAt: number
@@ -79,6 +81,21 @@ class RealtimeEventBus {
       }
     })
     return Array.from(users)
+  }
+
+  // Get unique users with details in a workspace
+  getWorkspaceUsersWithDetails(workspaceId: string): { id: string; name: string; image: string | null }[] {
+    const usersMap = new Map<string, { id: string; name: string; image: string | null }>()
+    this.connections.forEach((conn) => {
+      if (conn.workspaceId === workspaceId && conn.userName && !usersMap.has(conn.userId)) {
+        usersMap.set(conn.userId, {
+          id: conn.userId,
+          name: conn.userName,
+          image: conn.userImage || null,
+        })
+      }
+    })
+    return Array.from(usersMap.values())
   }
 
   // Broadcast event to all connections in a workspace

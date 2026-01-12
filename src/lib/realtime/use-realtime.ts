@@ -88,6 +88,10 @@ export function useRealtime({
         // Handle connection event
         if (data.type === "connected") {
           setConnectionId(data.connectionId)
+          // Set initial online users from connection event
+          if (data.onlineUsers && Array.isArray(data.onlineUsers)) {
+            setOnlineUsers(data.onlineUsers.map((u: { id: string }) => u.id))
+          }
           return
         }
 
