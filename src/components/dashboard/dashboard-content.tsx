@@ -5,16 +5,29 @@ import { useRouter } from "next/navigation"
 import { useCallback, useMemo, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, FolderKanban, LayoutList, CheckCircle2, Circle, TrendingUp, Activity, ArrowRight, Zap, Flame, Clock } from "lucide-react"
+import { Plus, FolderKanban, LayoutList, CheckCircle2, Circle, TrendingUp, Activity, ArrowRight, Zap, Flame, Clock, User, MessageSquare, GitCommit } from "lucide-react"
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { WorkspaceStats, StatusDistribution, ActivityTrend, ActivityHeatmapData, MostActiveProject } from "@/lib/actions/stats"
+import { WorkspaceStats, StatusDistribution, ActivityTrend, ActivityHeatmapData, MostActiveProject, RecentActivityItem } from "@/lib/actions/stats"
 import { ActivityChart } from "./activity-chart"
 import { ActivityHeatmap } from "./activity-heatmap"
 import { cn } from "@/lib/utils"
 import { useDashboardRealtime } from "@/lib/realtime/use-realtime"
 import { LiveDateTime } from "./live-date-time"
 import { IssueWithProject } from "@/lib/actions/issues"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
+// Helper to format relative time
+function formatRelativeTime(timestamp: number): string {
+  const now = Math.floor(Date.now() / 1000)
+  const diff = now - timestamp
+
+  if (diff < 60) return "just now"
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`
+  return new Date(timestamp * 1000).toLocaleDateString()
+}
 
 interface Workspace {
   id: string
@@ -32,9 +45,11 @@ interface DashboardContentProps {
   heatmapData?: ActivityHeatmapData
   mostActiveProject?: MostActiveProject | null
   oldestIssues?: IssueWithProject[]
+  myIssues?: IssueWithProject[]
+  recentActivity?: RecentActivityItem[]
 }
 
-export function DashboardContent({ workspaces, userName, workspaceStats = {}, statusDistribution, activityTrend, heatmapData, mostActiveProject, oldestIssues = [] }: DashboardContentProps) {
+export function DashboardContent({ workspaces, userName, workspaceStats = {}, statusDistribution, activityTrend, heatmapData, mostActiveProject, oldestIssues = [], myIssues = [], recentActivity = [] }: DashboardContentProps) {
   const router = useRouter()
   const lastRefreshRef = useRef(Date.now())
 
@@ -209,26 +224,6 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
                       </div>
                     </div>
 
-                    {/* Quick Stats */}
-                    <div className="mt-6 pt-5 border-t border-border/30">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Zap className="h-4 w-4 text-orange-400" />
-                          <span>Quick Stats</span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1.5">
-                            <div className="h-2 w-2 rounded-full bg-orange-400 animate-pulse" />
-                            <span className="text-muted-foreground">{totals.openIssues} active</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="h-2 w-2 rounded-full bg-emerald-400" />
-                            <span className="text-muted-foreground">{totals.completedIssues} done</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Top Project */}
                     {mostActiveProject && (
                       <div className="mt-5 pt-5 border-t border-border/30">
@@ -283,6 +278,160 @@ export function DashboardContent({ workspaces, userName, workspaceStats = {}, st
               <ActivityHeatmap data={heatmapData} />
             </div>
           )}
+
+          {/* My Issues & Recent Activity - Two Column Layout */}
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* My Issues Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+            >
+              <Card className="overflow-hidden border-border/50 h-full">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-500/10">
+                      <User className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">My Issues</CardTitle>
+                      <CardDescription className="text-xs">
+                        {myIssues.length > 0 ? `${myIssues.length} assigned to you` : "Nothing assigned"}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {myIssues.length > 0 ? (
+                    <div className="space-y-2">
+                      {myIssues.map((issue, index) => (
+                        <motion.div
+                          key={issue.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.28 + index * 0.03 }}
+                        >
+                          <Link href={`/w/${issue.workspace.slug}/issue/${issue.identifier}`}>
+                            <div className="group flex items-center justify-between p-2.5 -mx-2.5 rounded-lg hover:bg-surface-2/50 transition-colors cursor-pointer">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-[10px] font-mono text-muted-foreground">{issue.identifier}</span>
+                                  <span className={cn(
+                                    "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                    issue.status === "in_progress" && "bg-orange-500/20 text-orange-400",
+                                    issue.status === "in_review" && "bg-yellow-500/20 text-yellow-400",
+                                    issue.status === "todo" && "bg-blue-500/20 text-blue-400",
+                                    issue.status === "backlog" && "bg-gray-500/20 text-gray-400"
+                                  )}>
+                                    {issue.status.replace("_", " ")}
+                                  </span>
+                                </div>
+                                <p className="text-sm font-medium truncate group-hover:text-foreground transition-colors">
+                                  {issue.title}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground truncate">
+                                  {issue.project.name}
+                                </p>
+                              </div>
+                              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all flex-shrink-0 ml-2" />
+                            </div>
+                          </Link>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-sm text-muted-foreground">
+                      <User className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                      <p>No issues assigned to you</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Recent Activity Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.28 }}
+            >
+              <Card className="overflow-hidden border-border/50 h-full">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/10">
+                      <Activity className="h-4 w-4 text-purple-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Recent Activity</CardTitle>
+                      <CardDescription className="text-xs">
+                        {recentActivity.length > 0 ? "What's happening across workspaces" : "No recent activity"}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {recentActivity.length > 0 ? (
+                    <div className="space-y-3">
+                      {recentActivity.map((activity, index) => (
+                        <motion.div
+                          key={activity.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.3 + index * 0.03 }}
+                        >
+                          <Link href={`/w/${activity.workspaceSlug}/issue/${activity.issueIdentifier}`}>
+                            <div className="group flex items-start gap-3 p-2 -mx-2 rounded-lg hover:bg-surface-2/50 transition-colors cursor-pointer">
+                              <Avatar className="h-6 w-6 flex-shrink-0 mt-0.5">
+                                <AvatarImage src={activity.actorImage || undefined} />
+                                <AvatarFallback className="text-[10px] bg-surface-2">
+                                  {activity.actorName?.charAt(0).toUpperCase() || "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 text-xs">
+                                  <span className="font-medium text-foreground truncate max-w-[100px]">
+                                    {activity.actorName}
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {activity.type === "issue_created" && "created"}
+                                    {activity.type === "issue_updated" && `updated ${activity.field}`}
+                                    {activity.type === "comment_added" && "commented on"}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                  <span className="font-mono">{activity.issueIdentifier}</span>
+                                  {" · "}
+                                  {activity.issueTitle}
+                                </p>
+                                {activity.type === "issue_updated" && activity.newValue && (
+                                  <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+                                    → {activity.newValue}
+                                  </p>
+                                )}
+                                {activity.type === "comment_added" && activity.commentPreview && (
+                                  <p className="text-[11px] text-muted-foreground/70 mt-0.5 line-clamp-1">
+                                    "{activity.commentPreview}"
+                                  </p>
+                                )}
+                                <p className="text-[10px] text-muted-foreground/50 mt-1">
+                                  {formatRelativeTime(activity.timestamp)}
+                                </p>
+                              </div>
+                            </div>
+                          </Link>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-sm text-muted-foreground">
+                      <Activity className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                      <p>No recent activity</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
         </motion.div>
       )}
 

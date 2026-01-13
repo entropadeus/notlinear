@@ -192,6 +192,49 @@ export async function getOldestOpenIssues(limit: number = 5): Promise<IssueWithP
   })) as IssueWithProject[]
 }
 
+/**
+ * Get issues assigned to the current user across all workspaces
+ */
+export async function getMyIssues(limit: number = 10): Promise<IssueWithProject[]> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return []
+  }
+
+  const results = await db
+    .select({
+      issue: issues,
+      project: {
+        id: projects.id,
+        name: projects.name,
+      },
+      workspace: {
+        id: workspaces.id,
+        slug: workspaces.slug,
+        name: workspaces.name,
+      },
+    })
+    .from(issues)
+    .innerJoin(workspaceMembers, eq(workspaceMembers.workspaceId, issues.workspaceId))
+    .innerJoin(projects, eq(issues.projectId, projects.id))
+    .innerJoin(workspaces, eq(issues.workspaceId, workspaces.id))
+    .where(
+      and(
+        eq(workspaceMembers.userId, session.user.id),
+        eq(issues.assigneeId, session.user.id),
+        sql`${issues.status} NOT IN ('done', 'cancelled')`
+      )
+    )
+    .orderBy(desc(issues.updatedAt))
+    .limit(limit)
+
+  return results.map((r) => ({
+    ...r.issue,
+    project: r.project,
+    workspace: r.workspace,
+  })) as IssueWithProject[]
+}
+
 export async function getIssues(projectId?: string, workspaceId?: string): Promise<Issue[]> {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {

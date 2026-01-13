@@ -100,10 +100,21 @@ export function ActivityChart({ distribution, activityTrend }: ActivityChartProp
     return { ...seg, start }
   })
 
-  // Format percent change for display
-  const percentChange = activityTrend?.percentChange ?? 0
-  const percentChangeText = percentChange > 0 ? `+${percentChange}%` : `${percentChange}%`
-  const percentChangeColor = percentChange > 0 ? "text-emerald-400" : percentChange < 0 ? "text-red-400" : "text-muted-foreground"
+  // Format percent change for display - or show absolute numbers if baseline was too low
+  const percentChange = activityTrend?.percentChange
+  const totalLastWeek = activityTrend?.totalLastWeek ?? 0
+  const hasPercentChange = percentChange !== null && percentChange !== undefined
+
+  // If we have a meaningful baseline, show percentage. Otherwise show absolute comparison.
+  const trendText = hasPercentChange
+    ? (percentChange > 0 ? `+${percentChange}%` : `${percentChange}%`) + " vs last week"
+    : totalLastWeek === 0
+      ? "first week of activity"
+      : `${totalLastWeek} last week`
+
+  const percentChangeColor = hasPercentChange
+    ? (percentChange > 0 ? "text-emerald-400" : percentChange < 0 ? "text-red-400" : "text-muted-foreground")
+    : "text-muted-foreground"
 
   const hasActivityData = activityPoints.length > 1
   const totalActivity = activityTrend?.totalThisWeek ?? 0
@@ -232,7 +243,7 @@ export function ActivityChart({ distribution, activityTrend }: ActivityChartProp
               </span>
               {hasActivityData && (
                 <span className={cn("text-xs font-medium", percentChangeColor)}>
-                  {percentChangeText} vs last week
+                  {trendText}
                 </span>
               )}
             </div>

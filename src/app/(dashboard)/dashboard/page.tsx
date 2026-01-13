@@ -2,8 +2,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { getWorkspaces } from "@/lib/actions/workspaces"
-import { getWorkspaceStats, getStatusDistribution, getActivityTrend, getActivityHeatmapData, getMostActiveProject, WorkspaceStats } from "@/lib/actions/stats"
-import { getOldestOpenIssues, IssueWithProject } from "@/lib/actions/issues"
+import { getWorkspaceStats, getStatusDistribution, getActivityTrend, getActivityHeatmapData, getMostActiveProject, getRecentActivity, WorkspaceStats } from "@/lib/actions/stats"
+import { getOldestOpenIssues, getMyIssues, IssueWithProject } from "@/lib/actions/issues"
 import { DashboardContent } from "@/components/dashboard/dashboard-content"
 
 export default async function DashboardPage() {
@@ -15,13 +15,15 @@ export default async function DashboardPage() {
   const workspaces = await getWorkspaces()
 
   // Get stats for all workspaces, status distribution, activity trend, heatmap, and most active project in parallel
-  const [statsResults, statusDistribution, activityTrend, heatmapData, mostActiveProject, oldestIssues] = await Promise.all([
+  const [statsResults, statusDistribution, activityTrend, heatmapData, mostActiveProject, oldestIssues, myIssues, recentActivity] = await Promise.all([
     Promise.all(workspaces.map(w => getWorkspaceStats(w.id))),
     getStatusDistribution(),
     getActivityTrend(),
     getActivityHeatmapData(),
     getMostActiveProject(),
     getOldestOpenIssues(5),
+    getMyIssues(5),
+    getRecentActivity(8),
   ])
 
   const workspaceStats: Record<string, WorkspaceStats> = {}
@@ -41,6 +43,8 @@ export default async function DashboardPage() {
       heatmapData={heatmapData}
       mostActiveProject={mostActiveProject}
       oldestIssues={oldestIssues}
+      myIssues={myIssues}
+      recentActivity={recentActivity}
     />
   )
 }

@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { issues, projects, workspaces, workspaceMembers, issueRevisions, comments } from "@/lib/db/schema"
+import { issues, projects, workspaces, workspaceMembers, issueRevisions, comments, users } from "@/lib/db/schema"
 import { eq, and, count, sql, gte, lte } from "drizzle-orm"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -299,7 +299,7 @@ export interface ActivityTrend {
   data: ActivityDataPoint[]
   totalThisWeek: number
   totalLastWeek: number
-  percentChange: number
+  percentChange: number | null // null when baseline is too low for meaningful percentage
 }
 
 /**
@@ -435,9 +435,18 @@ export async function getActivityTrend(days: number = 28): Promise<ActivityTrend
     }
   }
 
-  const percentChange = totalLastWeek === 0
-    ? (totalThisWeek > 0 ? 100 : 0)
-    : Math.round(((totalThisWeek - totalLastWeek) / totalLastWeek) * 100)
+  // Only show percent change if:
+  // 1. We have a meaningful baseline (at least 5 activities last week)
+  // 2. The percentage isn't absurdly high (cap at 500%)
+  // Otherwise the percentage is misleading and we show absolute numbers instead
+  const rawPercentChange = totalLastWeek >= 5
+    ? Math.round(((totalThisWeek - totalLastWeek) / totalLastWeek) * 100)
+    : null
+
+  // If percentage is over 500%, it's not useful info - show absolute numbers instead
+  const percentChange = rawPercentChange !== null && Math.abs(rawPercentChange) <= 500
+    ? rawPercentChange
+    : null
 
   return { data, totalThisWeek, totalLastWeek, percentChange }
 }
@@ -604,6 +613,202 @@ export interface MostActiveProject {
 /**
  * Get the project with the most issues across all user's workspaces
  */
+// Recent activity item for activity feed
+export interface RecentActivityItem {
+  id: string
+  type: "issue_created" | "issue_updated" | "comment_added"
+  timestamp: number
+  issueId: string
+  issueIdentifier: string
+  issueTitle: string
+  projectName: string
+  workspaceSlug: string
+  // For updates: which field changed
+  field?: string
+  oldValue?: string | null
+  newValue?: string | null
+  // For comments: preview text
+  commentPreview?: string
+  // Actor info
+  actorId: string
+  actorName: string
+  actorImage: string | null
+}
+
+/**
+ * Get recent activity across all workspaces
+ */
+export async function getRecentActivity(limit: number = 10): Promise<RecentActivityItem[]> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return []
+  }
+
+  // Get all workspaces user is a member of
+  const userWorkspaces = await db
+    .select({ workspaceId: workspaceMembers.workspaceId })
+    .from(workspaceMembers)
+    .where(eq(workspaceMembers.userId, session.user.id))
+
+  if (userWorkspaces.length === 0) {
+    return []
+  }
+
+  const workspaceIds = userWorkspaces.map(w => w.workspaceId)
+  const workspaceFilter = workspaceIds.length === 1
+    ? eq(issues.workspaceId, workspaceIds[0])
+    : sql`${issues.workspaceId} IN (${sql.join(workspaceIds.map(id => sql`${id}`), sql`, `)})`
+
+  // Get recent issue creations
+  const recentIssues = await db
+    .select({
+      id: issues.id,
+      identifier: issues.identifier,
+      title: issues.title,
+      createdAt: issues.createdAt,
+      projectName: projects.name,
+      workspaceSlug: workspaces.slug,
+      actorId: issues.assigneeId,
+    })
+    .from(issues)
+    .innerJoin(projects, eq(issues.projectId, projects.id))
+    .innerJoin(workspaces, eq(issues.workspaceId, workspaces.id))
+    .where(workspaceFilter)
+    .orderBy(sql`${issues.createdAt} DESC`)
+    .limit(limit)
+
+  // Get recent revisions
+  const recentRevisions = await db
+    .select({
+      id: issueRevisions.id,
+      issueId: issueRevisions.issueId,
+      field: issueRevisions.field,
+      oldValue: issueRevisions.oldValue,
+      newValue: issueRevisions.newValue,
+      createdAt: issueRevisions.createdAt,
+      authorId: issueRevisions.authorId,
+      issueIdentifier: issues.identifier,
+      issueTitle: issues.title,
+      projectName: projects.name,
+      workspaceSlug: workspaces.slug,
+    })
+    .from(issueRevisions)
+    .innerJoin(issues, eq(issueRevisions.issueId, issues.id))
+    .innerJoin(projects, eq(issues.projectId, projects.id))
+    .innerJoin(workspaces, eq(issues.workspaceId, workspaces.id))
+    .where(workspaceFilter)
+    .orderBy(sql`${issueRevisions.createdAt} DESC`)
+    .limit(limit)
+
+  // Get recent comments
+  const recentComments = await db
+    .select({
+      id: comments.id,
+      issueId: comments.issueId,
+      content: comments.content,
+      createdAt: comments.createdAt,
+      authorId: comments.authorId,
+      issueIdentifier: issues.identifier,
+      issueTitle: issues.title,
+      projectName: projects.name,
+      workspaceSlug: workspaces.slug,
+    })
+    .from(comments)
+    .innerJoin(issues, eq(comments.issueId, issues.id))
+    .innerJoin(projects, eq(issues.projectId, projects.id))
+    .innerJoin(workspaces, eq(issues.workspaceId, workspaces.id))
+    .where(workspaceFilter)
+    .orderBy(sql`${comments.createdAt} DESC`)
+    .limit(limit)
+
+  // Get user info for actors
+  const actorIds = new Set<string>()
+  recentIssues.forEach(i => i.actorId && actorIds.add(i.actorId))
+  recentRevisions.forEach(r => r.authorId && actorIds.add(r.authorId))
+  recentComments.forEach(c => c.authorId && actorIds.add(c.authorId))
+  // Add current user as fallback for issue creators
+  actorIds.add(session.user.id)
+
+  const actorIdsArray = Array.from(actorIds)
+  const actorsData = actorIdsArray.length > 0
+    ? await db
+        .select({
+          id: users.id,
+          name: users.name,
+          image: users.image,
+        })
+        .from(users)
+        .where(sql`${users.id} IN (${sql.join(actorIdsArray.map(id => sql`${id}`), sql`, `)})`)
+    : []
+
+  const actorsMap = new Map(actorsData.map(a => [a.id, a]))
+
+  // Combine and sort all activities
+  const activities: RecentActivityItem[] = []
+
+  // Add issue creations
+  for (const issue of recentIssues) {
+    const actor = actorsMap.get(issue.actorId || session.user.id) || { name: "Unknown", image: null }
+    activities.push({
+      id: `issue-${issue.id}`,
+      type: "issue_created",
+      timestamp: typeof issue.createdAt === 'number' ? issue.createdAt : Math.floor(new Date(issue.createdAt).getTime() / 1000),
+      issueId: issue.id,
+      issueIdentifier: issue.identifier,
+      issueTitle: issue.title,
+      projectName: issue.projectName,
+      workspaceSlug: issue.workspaceSlug,
+      actorId: issue.actorId || session.user.id,
+      actorName: actor.name || "Unknown",
+      actorImage: actor.image,
+    })
+  }
+
+  // Add revisions
+  for (const rev of recentRevisions) {
+    const actor = actorsMap.get(rev.authorId) || { name: "Unknown", image: null }
+    activities.push({
+      id: `rev-${rev.id}`,
+      type: "issue_updated",
+      timestamp: typeof rev.createdAt === 'number' ? rev.createdAt : Math.floor(new Date(rev.createdAt).getTime() / 1000),
+      issueId: rev.issueId,
+      issueIdentifier: rev.issueIdentifier,
+      issueTitle: rev.issueTitle,
+      projectName: rev.projectName,
+      workspaceSlug: rev.workspaceSlug,
+      field: rev.field,
+      oldValue: rev.oldValue,
+      newValue: rev.newValue,
+      actorId: rev.authorId,
+      actorName: actor.name || "Unknown",
+      actorImage: actor.image,
+    })
+  }
+
+  // Add comments
+  for (const comment of recentComments) {
+    const actor = actorsMap.get(comment.authorId) || { name: "Unknown", image: null }
+    activities.push({
+      id: `comment-${comment.id}`,
+      type: "comment_added",
+      timestamp: typeof comment.createdAt === 'number' ? comment.createdAt : Math.floor(new Date(comment.createdAt).getTime() / 1000),
+      issueId: comment.issueId,
+      issueIdentifier: comment.issueIdentifier,
+      issueTitle: comment.issueTitle,
+      projectName: comment.projectName,
+      workspaceSlug: comment.workspaceSlug,
+      commentPreview: comment.content?.substring(0, 100) || "",
+      actorId: comment.authorId,
+      actorName: actor.name || "Unknown",
+      actorImage: actor.image,
+    })
+  }
+
+  // Sort by timestamp descending and limit
+  activities.sort((a, b) => b.timestamp - a.timestamp)
+  return activities.slice(0, limit)
+}
+
 export async function getMostActiveProject(): Promise<MostActiveProject | null> {
   try {
     const session = await getServerSession(authOptions)
